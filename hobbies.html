@@ -82,10 +82,14 @@
     <!-- The 3D lounge (decorative; the channel buttons below are the real controls) -->
     <div class="lounge__stage" data-stage aria-hidden="true"></div>
 
-    <header class="lounge__intro">
+    <header class="lounge__intro lounge__intro--lounge">
       <h1 class="lounge__title">Off duty</h1>
-      <p class="lounge__lede">The lounge. Four monitors, four channels, everything I do when the pipelines are quiet. Click a monitor to tune in.</p>
+      <p class="lounge__lede">The lounge. Four monitors, four channels, everything I do when the pipelines are quiet. Click a monitor to tune in, or take the stairs to the cockpit.</p>
     </header>
+    <div class="lounge__intro lounge__intro--cockpit">
+      <p class="lounge__title" aria-hidden="true">The bridge</p>
+      <p class="lounge__lede">Pilot's seat, hyperdrive engaged, Earth below. Drag to look around; the monitor on the console has the pilot file.</p>
+    </div>
 
     <nav class="channels-bar" id="channels" aria-label="Hobby channels">
       <ul>
@@ -93,6 +97,14 @@
         <li><button class="ch" type="button" data-channel="1" aria-controls="hobby-esports"><span class="ch__no">CH 02</span>Esports</button></li>
         <li><button class="ch" type="button" data-channel="2" aria-controls="hobby-reading"><span class="ch__no">CH 03</span>Reading</button></li>
         <li><button class="ch" type="button" data-channel="3" aria-controls="hobby-sports"><span class="ch__no">CH 04</span>Sports</button></li>
+        <li><button class="ch ch--deck" type="button" data-deck="cockpit"><span class="ch__no">Up the stairs</span>Cockpit</button></li>
+      </ul>
+    </nav>
+
+    <nav class="channels-bar bridge-bar" aria-label="Cockpit controls">
+      <ul>
+        <li><button class="ch" type="button" data-pilot aria-controls="about-pilot"><span class="ch__no">Pilot file</span>About me</button></li>
+        <li><button class="ch ch--deck" type="button" data-deck="lounge"><span class="ch__no">Down the stairs</span>Lounge</button></li>
       </ul>
     </nav>
 
@@ -155,9 +167,28 @@
           <div><dt>Tennis</dt><dd><span class="todo">TODO: style or favourite shot</span></dd></div>
         </dl>
       </article>
+
+      <article class="hobby" id="about-pilot" data-hobby="4" tabindex="-1" aria-labelledby="about-pilot-title" hidden>
+        <p class="hobby__ch">Bridge / Pilot file</p>
+        <h2 class="hobby__title" id="about-pilot-title">Aviraj Ghatora</h2>
+        <p class="hobby__lede">Data and software engineer. Mathematician by training, heading for AI and data engineering.</p>
+        <p>I studied mathematics at the University of Toronto, with minors in computer science and business. Now I'm a Junior Associate at Export Development Canada, building the pipelines that move data into Databricks, the API integrations around them, and the tests that keep them honest. Before that I finished a four-month data integration project in one month at HomeTrust / Fairstone Bank.</p>
+        <dl class="hobby__log">
+          <div><dt>Station</dt><dd>Export Development Canada, Toronto</dd></div>
+          <div><dt>Training</dt><dd>Hons. BSc Mathematics, UofT; minors in CS and business</dd></div>
+          <div><dt>Flies with</dt><dd>Python, SQL, Databricks, Spark, Azure, React</dd></div>
+          <div><dt>Heading</dt><dd>AI and data engineering</dd></div>
+        </dl>
+        <p class="hobby__links">
+          <a href="portfolio.html">Full file</a>
+          <a href="assets/Aviraj_Ghatora_Resume.pdf" target="_blank" rel="noopener">Resume</a>
+          <a href="https://github.com/AviGhat" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://www.linkedin.com/in/aviraj-ghatora/" target="_blank" rel="noopener">LinkedIn</a>
+        </p>
+      </article>
     </div>
 
-    <p class="lounge__hint" data-hint aria-hidden="true">Drag to look around. Click a monitor.</p>
+    <p class="lounge__hint" data-hint aria-hidden="true">Drag to look around. Click a monitor, or the door up the stairs.</p>
   </main>
 </body>
 </html>

@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { buildWorld } from './lounge-world.js';
+import { buildCockpit, buildHyperspace } from './cockpit.js';
 
 /* ==========================================================
-   Off Duty: a ship's lounge with four CRT monitors.
+   Off Duty: a ship's lounge with four CRT monitors, and a
+   cockpit up the stairs.
    Click a monitor (or a channel button) and the camera flies in,
-   then a terminal opens over the screen with that hobby.
+   then a terminal opens over the screen with that hobby. Click the
+   door at the top of the stairs to climb into the pilot's seat,
+   where the console monitor opens the pilot file (about me).
    ========================================================== */
 
 const root = document.documentElement;
@@ -13,14 +17,20 @@ const css = getComputedStyle(root);
 const token = (name) => css.getPropertyValue(name).trim();
 const color = (name) => new THREE.Color(token(name));
 const motion = () => root.classList.contains('fx-on');
-const sound = (name) => { if (window.agSound && window.agSound[name]) window.agSound[name](); };
+const sound = (name) => {
+  try { if (window.agSound && window.agSound[name]) window.agSound[name](); } catch (e) { /* sound is a nicety; never let it break the scene */ }
+};
 
 const stage = document.querySelector('[data-stage]');
+const lounge = document.querySelector('.lounge');
 const tv = document.querySelector('[data-tv]');
 const tvLabel = tv.querySelector('[data-tv-label]');
 const hobbies = [...tv.querySelectorAll('[data-hobby]')];
 const chButtons = [...document.querySelectorAll('[data-channel]')];
+const deckButtons = [...document.querySelectorAll('[data-deck]')];
+const pilotButtons = [...document.querySelectorAll('[data-pilot]')];
 const hint = document.querySelector('[data-hint]');
+const ABOUT = 4;   // the pilot file is the fifth terminal
 
 const CHANNELS = [
   { name: 'Music', ink: '--amber' },
@@ -33,10 +43,12 @@ const CHANNELS = [
 
 let current = -1;
 let opener = null;
+let mode = 'lounge';   // lounge | transit | cockpit
 
 function showTerminal(i) {
   hobbies.forEach((h, k) => { h.hidden = k !== i; });
-  tvLabel.textContent = `CH ${String(i + 1).padStart(2, '0')} / Receiving`;
+  tvLabel.textContent = i === ABOUT ? 'Bridge / Pilot file' : `CH ${String(i + 1).padStart(2, '0')} / Receiving`;
+  tv.classList.toggle('is-pilot', i === ABOUT);
   tv.hidden = false;
   tv.classList.remove('is-open');
   void tv.offsetWidth;
@@ -48,8 +60,15 @@ function hideTerminal() {
   tv.hidden = true;
 }
 function markChannel(i) {
-  document.querySelector('.lounge').classList.toggle('is-tuned', i >= 0);
+  lounge.classList.toggle('is-tuned', i >= 0);
   chButtons.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
+  pilotButtons.forEach((b) => b.setAttribute('aria-pressed', String(i === ABOUT)));
+}
+function setMode(m) {
+  mode = m;
+  lounge.dataset.mode = m;   // CSS swaps the intro and the button bars
+  const url = location.pathname + location.search + (m === 'cockpit' ? '#cockpit' : '');
+  history.replaceState(null, '', url);
 }
 
 /* ---------- Three.js ---------- */
@@ -58,13 +77,17 @@ let scene3d = null;
 try {
   scene3d = buildScene();
 } catch (err) {
-  // No WebGL: the channel buttons and terminal still work as a plain page
+  // No WebGL: the channel buttons and terminals still work as a plain page
   root.classList.add('no-webgl');
 }
 
 function open(i, from) {
   if (i === current && !tv.hidden) return;
-  opener = from || chButtons[i];
+  // Each terminal lives on its own deck: walk there first
+  if (scene3d && i === ABOUT && mode === 'lounge') { goCockpit(() => open(i, from)); return; }
+  if (scene3d && i < ABOUT && mode === 'cockpit') { goLounge(() => open(i, from)); return; }
+  if (mode === 'transit') return;
+  opener = from || chButtons[i] || pilotButtons[0];
   current = i;
   markChannel(i);
   hideTerminal();
@@ -80,14 +103,54 @@ function close() {
   if (scene3d) scene3d.home();
   if (opener) opener.focus({ preventScroll: true });
 }
+function settle() {
+  if (current < 0) return;
+  hideTerminal();
+  markChannel(-1);
+  current = -1;
+}
+function goCockpit(done) {
+  if (mode === 'cockpit') { if (done) done(); return; }
+  if (mode !== 'lounge') return;
+  settle();
+  if (hint) hint.classList.add('is-gone');
+  if (!scene3d) { setMode('cockpit'); if (done) done(); return; }
+  setMode('transit');
+  scene3d.toCockpit(() => { setMode('cockpit'); if (done) done(); });
+}
+function goLounge(done) {
+  if (mode === 'lounge') { if (done) done(); return; }
+  if (mode !== 'cockpit') return;
+  settle();
+  if (!scene3d) { setMode('lounge'); if (done) done(); return; }
+  setMode('transit');
+  scene3d.toLounge(() => { setMode('lounge'); if (done) done(); });
+}
 
 chButtons.forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.channel), b)));
+pilotButtons.forEach((b) => b.addEventListener('click', () => open(ABOUT, b)));
+deckButtons.forEach((b) => b.addEventListener('click', () => (b.dataset.deck === 'cockpit' ? goCockpit() : goLounge())));
 tv.querySelector('[data-tv-close]').addEventListener('click', close);
 tv.querySelector('[data-tv-prev]').addEventListener('click', () => open((current + 3) % 4));
 tv.querySelector('[data-tv-next]').addEventListener('click', () => open((current + 1) % 4));
 window.addEventListener('keydown', (e) => {
   if (document.body.classList.contains('is-locked')) return;   // boot screen
-  if (e.key === 'Escape' && current >= 0) { e.preventDefault(); close(); }
+  if (e.key !== 'Escape') return;
+  if (current >= 0) { e.preventDefault(); close(); }
+  else if (mode === 'cockpit') { e.preventDefault(); goLounge(); }
+});
+
+// A link straight to the bridge: hobbies.html#cockpit
+if (location.hash === '#cockpit') {
+  if (scene3d) { scene3d.jumpToCockpit(); setMode('cockpit'); }
+  else open(ABOUT);
+} else {
+  setMode('lounge');
+}
+// Editing the address (or following an in-page #cockpit link) moves between decks too
+window.addEventListener('hashchange', () => {
+  if (location.hash === '#cockpit') goCockpit();
+  else if (mode === 'cockpit') goLounge();
 });
 
 /* ==========================================================
@@ -109,7 +172,7 @@ function buildScene() {
   scene.background = color('--space-black');
   scene.fog = new THREE.Fog(color('--space-black'), 16, 34);
 
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 220);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 1500);
 
   const mat = (name, rough = 0.8, metal = 0.1, extra = {}) =>
     new THREE.MeshStandardMaterial({ color: color(name), roughness: rough, metalness: metal, envMapIntensity: 0.35, ...extra });
@@ -151,6 +214,8 @@ function buildScene() {
   };
 
   const world = buildWorld({ scene, renderer, token, color, box, rbox, rod, canvasTexture, small: small(), motion });
+  const hyper = buildHyperspace({ scene, color, motion, small: small() });
+  const cockpit = buildCockpit({ scene, token, color, box, rbox, rod, canvasTexture, small: small(), motion });
 
   /* ---------- CRT monitors ---------- */
 
@@ -330,8 +395,12 @@ function buildScene() {
   const view = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
   let tween = null;
   let focused = -1;
+  let deck = 'lounge';     // lounge | transit | cockpit (the scene's own copy of the mode)
   let yaw = 0, yawGoal = 0;
   const pointer = { x: 0, y: 0 };
+  // Head turn in the pilot's seat: drag for a full 360, the pointer adds a little sway
+  const head = { yaw: 0, pitch: 0, yawGoal: 0, pitchGoal: 0 };
+  const actual = new THREE.Vector3();   // where the camera is really looking this frame
 
   const layout = () => {
     const w = stage.clientWidth, h = stage.clientHeight;
@@ -339,40 +408,60 @@ function buildScene() {
     camera.aspect = w / h;
     // Portrait screens pull the camera back and up so the whole lounge fits
     const portrait = w / h < 1;
-    camera.fov = portrait ? 72 : 48;
+    camera.fov = portrait ? 82 : 48;
     camera.updateProjectionMatrix();
-    home.pos.set(0, portrait ? 12.5 : 6.4, portrait ? 15.5 : 9.6);
+    // Phones stand inside the room, up by the ceiling, so the frame never shows past
+    // the walls; wide screens keep the cutaway view from just beyond the front wall
+    home.pos.set(0, portrait ? 7.3 : 6.4, portrait ? 7.1 : 9.6);
+    home.target.set(0, portrait ? 0.4 : 1.2, portrait ? -2.6 : -1.2);
     if (focused >= 0 && !tween) Object.assign(view, focusPose(focused));
   };
 
+  const screenOf = (i) => (i === ABOUT ? cockpit.aboutScreen : monitors[i].screen);
   const focusPose = (i) => {
-    const m = monitors[i];
+    const s = screenOf(i);
     const center = new THREE.Vector3();
-    m.screen.getWorldPosition(center);
+    s.getWorldPosition(center);
     const q = new THREE.Quaternion();
-    m.screen.getWorldQuaternion(q);
+    s.getWorldQuaternion(q);
     const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
     const up = new THREE.Vector3(0, 1, 0);
     const right = new THREE.Vector3().crossVectors(up, normal).normalize();
     const portrait = camera.aspect < 1;
-    const pos = center.clone().addScaledVector(normal, portrait ? 3.0 : 2.35).addScaledVector(up, 0.15);
+    const near = i === ABOUT;   // the console monitor is small and close; lean in rather than fly
+    const pos = center.clone().addScaledVector(normal, near ? (portrait ? 1.7 : 1.25) : (portrait ? 3.0 : 2.35)).addScaledVector(up, near ? 0.05 : 0.15);
     // Leave room for the terminal: the monitor sits left on wide screens, high on tall ones
     const target = center.clone();
-    if (portrait) target.addScaledVector(up, -0.55);
-    else target.addScaledVector(right, 0.55);
+    if (portrait) target.addScaledVector(up, near ? -0.4 : -0.55);
+    else target.addScaledVector(right, near ? 0.32 : 0.55);
     return { pos, target };
   };
 
   const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
   const flyTo = (to, done) => {
-    if (!motion()) { view.pos.copy(to.pos); view.target.copy(to.target); if (done) done(); tween = null; return; }
-    tween = { from: { pos: view.pos.clone(), target: view.target.clone() }, to, t0: performance.now(), dur: 1100, done };
+    if (!motion()) { view.pos.copy(to.pos); view.target.copy(to.target); tween = null; if (done) done(); return; }
+    // Start from where the camera is really looking, so a turned head eases round
+    tween = { from: { pos: camera.position.clone(), target: actual.clone() }, to, t0: performance.now(), dur: 1100, done };
+  };
+  // A longer walk along curves: up the stairs and through the door
+  const walk = (posPts, targetPts, dur, done) => {
+    if (!motion()) {
+      view.pos.copy(posPts[posPts.length - 1]); view.target.copy(targetPts[targetPts.length - 1]);
+      tween = null; if (done) done(); return;
+    }
+    tween = { path: new THREE.CatmullRomCurve3(posPts), aim: new THREE.CatmullRomCurve3(targetPts), t0: performance.now(), dur, done };
   };
 
   const homePose = () => {
     const p = home.pos.clone().sub(home.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(home.target);
     return { pos: p, target: home.target.clone() };
   };
+  const seatPose = () => ({ pos: cockpit.seat.pos.clone(), target: cockpit.seat.target.clone() });
+  const restPose = () => (deck === 'cockpit' ? seatPose() : homePose());
+
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const STAIR_PATH = [V(2.3, 2.5, 1.4), V(2.3, 3.6, -2.6), V(2.3, 4.45, -5.6), V(2.1, 4.4, -8.6)];
+  const STAIR_AIM = [V(2.3, 2.6, -4.0), V(2.3, 4.4, -7.5), V(2.2, 4.4, -11), V(2.0, 4.35, -16)];
 
   /* ---------- Pointer: hover, click, drag ---------- */
 
@@ -381,18 +470,33 @@ function buildScene() {
   let hovered = -1;
   let drag = null;
 
-  const pick = (e) => {
+  const aim = (e) => {
     const r = renderer.domElement.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
+  };
+  const pick = () => {
     const hit = ray.intersectObjects(pickables, false)[0];
     return hit ? hit.object.userData.index : -1;
   };
-  const onDog = () => ray.intersectObjects(world.dogHits, false).length > 0;   // uses the ray pick() just cast
+  const hits = (list) => ray.intersectObjects(list, false).length > 0;
+
+  // What the pointer is over, by deck
+  const target = (e) => {
+    aim(e);
+    if (deck === 'cockpit') return hits(cockpit.aboutHits) ? { kind: 'about' } : null;
+    if (deck !== 'lounge') return null;
+    const i = pick();
+    if (i >= 0) return { kind: 'monitor', i };
+    if (hits(world.doorHits)) return { kind: 'door' };
+    if (hits(world.dogHits)) return { kind: 'dog' };
+    return null;
+  };
 
   const el = renderer.domElement;
+  let hotKey = '';
   el.addEventListener('pointerdown', (e) => {
-    drag = { x: e.clientX, y: e.clientY, yaw: yawGoal, moved: false };
+    drag = { x: e.clientX, y: e.clientY, yaw: yawGoal, headYaw: head.yawGoal, headPitch: head.pitchGoal, moved: false };
     el.setPointerCapture(e.pointerId);
   });
   el.addEventListener('pointermove', (e) => {
@@ -400,30 +504,41 @@ function buildScene() {
     pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
     if (drag) {
       const dx = e.clientX - drag.x;
-      if (Math.abs(dx) > 5) drag.moved = true;
-      if (drag.moved && focused < 0) yawGoal = THREE.MathUtils.clamp(drag.yaw - dx * 0.004, -0.5, 0.5);
+      const dy = e.clientY - drag.y;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.moved = true;
+      if (drag.moved && focused < 0 && deck === 'lounge') yawGoal = THREE.MathUtils.clamp(drag.yaw - dx * 0.004, -0.5, 0.5);
+      if (drag.moved && focused < 0 && deck === 'cockpit') {
+        head.yawGoal = drag.headYaw + dx * 0.0035;
+        head.pitchGoal = THREE.MathUtils.clamp(drag.headPitch + dy * 0.004, -0.9, 0.9);
+      }
       return;
     }
-    const i = pick(e);
-    const dog = i < 0 && onDog();
-    el.style.cursor = i >= 0 || dog ? 'pointer' : 'grab';
-    if (i !== hovered) {
-      hovered = i;
-      if (i >= 0) sound('buzz');
-      chButtons.forEach((b, k) => b.classList.toggle('is-hot', k === i));
+    const t = target(e);
+    el.style.cursor = t ? 'pointer' : (deck === 'transit' ? 'default' : 'grab');
+    const key = t ? t.kind + (t.i ?? '') : '';
+    if (key !== hotKey) {
+      hotKey = key;
+      if (t && t.kind !== 'dog') sound('buzz');
     }
+    hovered = t && t.kind === 'monitor' ? t.i : -1;
+    cockpit.setHot(!!t && t.kind === 'about');
+    chButtons.forEach((b, k) => b.classList.toggle('is-hot', k === hovered));
   });
   el.addEventListener('pointerup', (e) => {
     const wasDrag = drag && drag.moved;
     drag = null;
     if (wasDrag) return;
-    const i = pick(e);
-    if (i >= 0) { sound('zap'); open(i, chButtons[i]); }
-    else if (onDog()) { sound('buzz'); world.pokeDog(); }      // a pat for the corgi
+    const t = target(e);
+    if (t && t.kind === 'monitor') { sound('zap'); open(t.i, chButtons[t.i]); }
+    else if (t && t.kind === 'about') { sound('zap'); open(ABOUT, pilotButtons[0]); }
+    else if (t && t.kind === 'door') goCockpit();
+    else if (t && t.kind === 'dog') { sound('buzz'); world.pokeDog(); }
     else if (focused >= 0) close();
   });
   el.addEventListener('pointerleave', () => {
     hovered = -1;
+    hotKey = '';
+    cockpit.setHot(false);
     chButtons.forEach((b) => b.classList.remove('is-hot'));
   });
 
@@ -431,33 +546,72 @@ function buildScene() {
 
   layout();
   Object.assign(view, homePose());
+  // Compile every shader up front (off the main thread where supported), so
+  // walking into the cockpit never stalls on first-time shader builds
+  if (renderer.compileAsync) renderer.compileAsync(scene, camera).catch(() => {});
+  else renderer.compile(scene, camera);
   let lastScreens = 0;
   let lastT = 0;
+  let nextBeep = 3000;
 
   const frame = (t) => {
-    const dt = Math.min(0.1, (t - lastT) / 1000);
+    requestAnimationFrame(frame);   // schedule first, so one bad frame can never stop the loop
+    try { step(t); } catch (err) { console.error(err); }
+  };
+  const step = (t) => {
+    const dt = THREE.MathUtils.clamp((t - lastT) / 1000, 0, 0.1);
     lastT = t;
     world.update(t, dt);
+    hyper.update(t, dt);
+    cockpit.update(t, dt);
+
     // Camera
-    if (tween) {
-      const p = Math.min(1, (t - tween.t0) / tween.dur);
+    if (tween && tween.path) {
+      const p = THREE.MathUtils.clamp((t - tween.t0) / tween.dur, 0, 1);   // frame time can predate the click
+      const k = ease(p);
+      view.pos.copy(tween.path.getPoint(k));
+      view.target.copy(tween.aim.getPoint(k));
+      if (p >= 1) { const done = tween.done; tween = null; if (done) done(); }
+    } else if (tween) {
+      const p = THREE.MathUtils.clamp((t - tween.t0) / tween.dur, 0, 1);   // frame time can predate the click
       const k = ease(p);
       view.pos.lerpVectors(tween.from.pos, tween.to.pos, k);
       view.target.lerpVectors(tween.from.target, tween.to.target, k);
       if (p >= 1) { const done = tween.done; tween = null; if (done) done(); }
     } else if (focused < 0) {
-      yaw += (yawGoal - yaw) * 0.08;
-      const hp = homePose();
-      view.pos.copy(hp.pos);
-      view.target.copy(hp.target);
+      if (deck === 'lounge') yaw += (yawGoal - yaw) * 0.08;
+      const rp = restPose();
+      view.pos.copy(rp.pos);
+      view.target.copy(rp.target);
     }
     camera.position.copy(view.pos);
+    const lookTarget = view.target.clone();
     if (motion() && !tween) {
-      // A slow drift and a little pointer parallax keep the room alive
-      camera.position.x += Math.sin(t * 0.00023) * 0.08 + pointer.x * (focused < 0 ? 0.35 : 0.05);
-      camera.position.y += Math.sin(t * 0.00031) * 0.05 - pointer.y * (focused < 0 ? 0.2 : 0.03);
+      if (deck === 'cockpit' && focused < 0) {
+        camera.position.y += Math.sin(t * 0.0016) * 0.008;   // the hum of the hull
+      } else if (deck === 'lounge') {
+        // A slow drift and a little pointer parallax keep the room alive
+        camera.position.x += Math.sin(t * 0.00023) * 0.08 + pointer.x * (focused < 0 ? 0.35 : 0.05);
+        camera.position.y += Math.sin(t * 0.00031) * 0.05 - pointer.y * (focused < 0 ? 0.2 : 0.03);
+      }
     }
-    camera.lookAt(view.target);
+    if (deck === 'cockpit' && focused < 0 && !tween) {
+      // Seated: turn the head around the forward line, by drag plus a little pointer sway
+      head.yaw += (head.yawGoal - head.yaw) * 0.12;
+      head.pitch += (head.pitchGoal - head.pitch) * 0.12;
+      const fwd = view.target.clone().sub(view.pos);
+      const dist = fwd.length();
+      fwd.normalize();
+      const sway = motion() ? 1 : 0;
+      const yawA = Math.atan2(fwd.x, fwd.z) + head.yaw - pointer.x * 0.12 * sway;
+      const pitchA = THREE.MathUtils.clamp(Math.asin(fwd.y) - head.pitch - pointer.y * 0.08 * sway, -1.3, 1.3);
+      lookTarget.copy(camera.position).add(new THREE.Vector3(Math.sin(yawA) * Math.cos(pitchA), Math.sin(pitchA), Math.cos(yawA) * Math.cos(pitchA)).multiplyScalar(dist));
+    }
+    // Your own seat is right behind your eyes: hide it once you turn round to face the cabin
+    const turned = Math.abs(Math.atan2(Math.sin(head.yaw), Math.cos(head.yaw)));
+    cockpit.ownSeat.visible = !(deck === 'cockpit' && turned > 1.2);
+    actual.copy(lookTarget);
+    camera.lookAt(lookTarget);
 
     // Monitors: hover swell, screen redraw at ~15fps
     monitors.forEach((m, i) => {
@@ -470,11 +624,17 @@ function buildScene() {
     if (t - lastScreens > (motion() ? 66 : 1000)) {
       monitors.forEach((m, i) => drawScreen(m, i, t));
       world.redraw(t);
+      cockpit.redraw(t);
       lastScreens = t;
     }
 
+    // The console chirps now and then while you're at the controls
+    if (deck === 'cockpit' && motion()) {
+      nextBeep -= dt * 1000;
+      if (nextBeep <= 0) { sound('beep'); nextBeep = 2500 + Math.random() * 4500; }
+    }
+
     renderer.render(scene, camera);
-    requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
 
@@ -485,11 +645,43 @@ function buildScene() {
   return {
     focus(i, done) {
       focused = i;
+      head.yaw = head.pitch = head.yawGoal = head.pitchGoal = 0;   // the fly-in starts from the turned view
       flyTo(focusPose(i), done);
     },
     home() {
       focused = -1;
-      flyTo(homePose());
+      flyTo(restPose());
+    },
+    toCockpit(done) {
+      focused = -1;
+      deck = 'transit';
+      world.setDoor(true);
+      sound('slide');
+      const seat = seatPose();
+      // Give the door a moment to start opening before the climb
+      head.yaw = head.pitch = head.yawGoal = head.pitchGoal = 0;
+      walk([camera.position.clone(), ...STAIR_PATH, seat.pos], [actual.clone(), ...STAIR_AIM, seat.target], 3600, () => {
+        deck = 'cockpit';
+        if (done) done();
+      });
+    },
+    toLounge(done) {
+      focused = -1;
+      deck = 'transit';
+      yaw = yawGoal = 0;
+      const rest = homePose();
+      walk([camera.position.clone(), ...STAIR_PATH.slice().reverse(), rest.pos], [actual.clone(), V(2.3, 4.4, -6), V(2.3, 3.0, -2), V(1.5, 1.6, 0.5), V(0.5, 1.3, -0.5), rest.target], 3400, () => {
+        deck = 'lounge';
+        world.setDoor(false);
+        sound('slide');
+        if (done) done();
+      });
+    },
+    jumpToCockpit() {
+      deck = 'cockpit';
+      head.yaw = head.pitch = head.yawGoal = head.pitchGoal = 0;
+      world.setDoor(true);
+      Object.assign(view, seatPose());
     },
   };
 }

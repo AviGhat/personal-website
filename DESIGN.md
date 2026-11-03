@@ -53,9 +53,23 @@ Boot sequence (first visit per session), dot-matrix name that reacts to the poin
 - Interaction: drag to look around, hover a monitor to buzz and light it, click or press a channel button to fly the camera in (1.1s) and open the `.tv` terminal. The terminal is translucent `--tv-glass` with scanlines and powers on like a tube. Esc, Close or a click on empty space flies back. On wide screens the monitor sits left with the terminal right; on phones the terminal docks at the bottom.
 - The hobby copy is real HTML (`.hobby` articles), so it's readable without WebGL (`.no-webgl` falls back to a plain list). Specifics still to fill are marked `.todo`.
 - Set dressing lives in `js/lounge-world.js`:
-  - Hull: metallic materials with RoomEnvironment reflections; a riveted viewport in the back wall with a real 3D Earth (turning surface and cloud layer, its own sun) and a starfield, plus a cool light shaft falling in through it.
+  - Hull: metallic materials with RoomEnvironment reflections. A riveted viewport sits in the left wall over the gaming corner; through it, hyperspace streaks slide past, and a cool light shaft falls in.
   - Floor: plates in two tones, grated side strips, hazard edging, and two woven rugs.
   - Cozy props: a gaming corner (desk, two live screens, lit keyboard, PC tower, chair, headphones); a bed with a striped blanket and pillows; a coffee table with a steaming mug; a floor lamp, a hanging lantern and a bedside lamp; a wall terminal; a gig poster; a bulkhead door; cargo.
   - A ceiling fan light: spinning blades, a soft additive light cone and a cool spotlight.
   - The ship's corgi: original low-poly, lying beside food and water bowls. It breathes, wags, looks around and twitches its ears; a click makes it happy for a few seconds.
 - On phones the decorative point lights are skipped (the glowing bulbs carry the look) and shadows are off.
+- **Hyperspace** (`js/cockpit.js`, `buildHyperspace`): a single instanced field of amber, cream, green and cyan streaks flying toward +z (the ship heads -z). It is dense around the cockpit axis for a tunnel ahead, with a band along the left flank for the lounge viewport. Streaks that would cross the ship stop short of it, and a white-hot glow sits at the vanishing point.
+- **Cockpit door:** at the top of the stairs, two panels slide into the back wall (with the `slide` sound) and a status lamp turns red to green. An invisible pad over the doorway makes it easy to click; the **Cockpit** button in the bar does the same.
+- **Cockpit** (`buildCockpit`):
+  - Styled after the grey-blue shuttle reference: panelled walls with angled ceiling panels, a ceiling light panel, blue floor strips down the aisle, crew seats along both walls, and portholes showing passing streaks.
+  - Two pilot seats face a sloped console: a radar sweeping the eight planets on their orbits, a status screen, blinking lit buttons (and the occasional `beep`), and a flight stick.
+  - The nose is a faceted glass canopy (top and side panes, each side split in two) tapering to a point below deck level, so the belly falls away and the view reaches down.
+  - Earth is a whole planet seen from high orbit (radius 200, about 760 out), low and to the left through the canopy, with its upper limb just clearing the console. It has an atmosphere rim and turns slowly, with clouds drifting faster than the ground.
+  - The back wall (seen when you turn round) carries original Bebop-style posters (a WANTED bounty bill, a BOP/SWING gig poster with a saxophone, a SESSION 27 title card), a JAZZ & BLUES neon over the door, a red guitar, framed records, a turntable whose record spins, a shelf of cassettes, and floor speakers.
+- The lounge is sealed: its ceiling (with light strips) and front wall face inward only, so the desktop cutaway camera still sees in from outside, while every view from inside (the walk down, the cockpit door) shows a closed room. On phones the lounge camera stands inside the room by the ceiling, so nothing beyond the walls is ever in frame.
+  - In the seat you can drag to look around a full 360°, with a little pointer sway on top. Your own seat hides when you turn to face the cabin.
+- **Decks:** `lounge`, `transit` and `cockpit` are set as `data-mode` on `.lounge`, and CSS swaps the intro and button bar for each.
+  - The camera walks a CatmullRom path up the stairs, through the door and into the first-person seat; in the seat, the pointer turns your head.
+  - The console monitor (or **About me**) opens terminal 5, the pilot file. Esc closes it; a second Esc walks back down and the door shuts behind you.
+  - `hobbies.html#cockpit` opens straight into the seat.

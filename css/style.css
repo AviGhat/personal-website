@@ -85,6 +85,11 @@
   --corgi:         #C9813A;
   --corgi-dark:    #7E4A1E;
   --bowl:          #4F9FB0;
+  --panel-door:    #7C8794;
+  --cockpit-wall:  #9AA6B4;
+  --cockpit-trim:  #5E6976;
+  --seat-pad:      #C9C2AE;
+  --floor-light:   #6FC3FF;
 
   /* Type */
   --f-display: "Syncopate", "Michroma", "Arial Narrow", sans-serif;
@@ -1553,7 +1558,7 @@ html.fx-off { scroll-behavior: auto; }
 .ch:hover .ch__no, .ch:focus-visible .ch__no, .ch.is-hot .ch__no, .ch[aria-pressed="true"] .ch__no { color: var(--space-black); }
 
 .lounge__hint {
-  position: absolute; z-index: 2; right: var(--gutter); bottom: calc(var(--s-3) + 0.9rem);
+  position: absolute; z-index: 2; right: var(--gutter); top: calc(var(--bar-h) + var(--s-2));
   font-size: var(--t-label); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim);
   transition: opacity 0.4s;
 }
@@ -1645,3 +1650,32 @@ html.fx-off { scroll-behavior: auto; }
 @media (min-width: 1024px) and (max-width: 1279px) {
   .bar__nav ~ .bar__cell--status, .bar__cell--status:has(~ .bar__nav) { display: none; }
 }
+
+/* ---------- Lounge decks: lounge, the walk up the stairs, the cockpit ---------- */
+
+.lounge__intro--cockpit, .bridge-bar { display: none; }
+.lounge[data-mode="cockpit"] .lounge__intro--cockpit { display: block; }
+.lounge[data-mode="cockpit"] .bridge-bar { display: block; }
+.lounge[data-mode="cockpit"] .lounge__intro--lounge,
+.lounge[data-mode="cockpit"] .channels-bar:not(.bridge-bar),
+.lounge[data-mode="transit"] .lounge__intro,
+.lounge[data-mode="transit"] .channels-bar { display: none; }
+.lounge.is-tuned .lounge__intro--cockpit { opacity: 0; }
+
+.channels-bar:not(.bridge-bar) ul { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 58rem; }
+.bridge-bar ul { grid-template-columns: repeat(2, minmax(0, 14rem)); }
+.ch--deck { border-color: var(--bebop-red); }
+.ch--deck .ch__no { color: var(--bebop-red); }
+
+.tv.is-pilot [data-tv-prev], .tv.is-pilot [data-tv-next] { display: none; }
+.hobby__links { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin-top: 1rem; }
+.hobby__links a {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.5rem; margin-left: -0.5rem;
+  font-size: var(--t-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); text-decoration: none;
+}
+.hobby__links a:hover, .hobby__links a:focus-visible { background: var(--amber); color: var(--space-black); }
+@media (max-width: 767px) { .ch--deck .ch__no { font-size: 0.8rem; } }
+.lounge[data-mode="cockpit"] .lounge__hint, .lounge[data-mode="transit"] .lounge__hint { display: none; }
+/* In the cockpit the console fills the lower half: title goes over the side wall */
+.lounge__intro--cockpit { top: calc(var(--bar-h) + var(--s-3)); bottom: auto; }
+.lounge__hint { pointer-events: none; max-width: 22ch; text-align: right; line-height: 1.6; }

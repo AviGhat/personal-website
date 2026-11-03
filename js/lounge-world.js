@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* ==========================================================
-   The lounge itself: hull, viewport with Earth outside, rugs,
+   The lounge itself: hull, a side viewport onto hyperspace, the cockpit door, rugs,
    furniture, lamps, a ceiling fan light, and the ship's corgi.
    Everything is built in code. Returns per-frame updaters.
    ========================================================== */
@@ -138,121 +138,91 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat(w, h));
     m.position.set(x, y, z); m.rotation.y = ry; m.receiveShadow = true; scene.add(m); return m;
   };
-  // Back wall, built around the viewport opening (x -6.8..-1.2, y 1.3..4.7)
+  // Back wall, built around the cockpit door at the top of the stairs (x 1.3..3.3, y 3.03..5.65)
   const WZ = -6.5;
-  wall(1.2, 8, -7.4, 4, WZ);
-  wall(9.2, 8, 3.4, 4, WZ);
-  wall(5.6, 1.3, -4.0, 0.65, WZ);
-  wall(5.6, 3.3, -4.0, 6.35, WZ);
-  wall(15, 8, -8, 4, 1, Math.PI / 2);
+  wall(9.3, 8, -3.35, 4, WZ);
+  wall(4.7, 8, 5.65, 4, WZ);
+  wall(2.0, 3.03, 2.3, 1.515, WZ);
+  wall(2.0, 2.35, 2.3, 6.825, WZ);
+
+  // Left wall, built around the viewport over the gaming corner (z -5.8..-1.0, y 1.9..4.8)
+  const vz0 = -5.8, vz1 = -1.0, vy0 = 1.9, vy1 = 4.8, vzc = (vz0 + vz1) / 2, vyc = (vy0 + vy1) / 2, vlen = vz1 - vz0, vh = vy1 - vy0;
+  wall(0.7, 8, -8, 4, -6.15, Math.PI / 2);
+  wall(9.5, 8, -8, 4, 3.75, Math.PI / 2);
+  wall(vlen, vy0, -8, vy0 / 2, vzc, Math.PI / 2);
+  wall(vlen, 8 - vy1, -8, (8 + vy1) / 2, vzc, Math.PI / 2);
   wall(15, 8, 8, 4, 1, -Math.PI / 2);
+  // Ceiling and front wall close the room. Both face inward only, so from the
+  // cutaway camera outside they vanish, but looking back from the stairs or the
+  // cockpit door the lounge is a sealed compartment, not an open box in space.
+  const lid = wall(16, 14, 0, 8, 0.5);
+  lid.rotation.set(Math.PI / 2, 0, 0);
+  wall(16, 8, 0, 4, 7.5, Math.PI);
+  // A run of ceiling lights so the lid isn't a blank slab from below
+  [-4, 0, 4].forEach((x) => box(0.9, 0.05, 6, warm, x, 7.96, 0.5).castShadow = false);
 
   // Viewport frame: heavy bars, mullions, bolts, a cyan sill light
-  const fx0 = -6.8, fx1 = -1.2, fy0 = 1.3, fy1 = 4.7, fcx = (fx0 + fx1) / 2, fcy = (fy0 + fy1) / 2;
-  box(fx1 - fx0 + 0.5, 0.28, 0.4, hullMid, fcx, fy1 + 0.1, WZ + 0.1);
-  box(fx1 - fx0 + 0.5, 0.32, 0.5, hullMid, fcx, fy0 - 0.1, WZ + 0.15);
-  box(0.28, fy1 - fy0 + 0.5, 0.4, hullMid, fx0 - 0.1, fcy, WZ + 0.1);
-  box(0.28, fy1 - fy0 + 0.5, 0.4, hullMid, fx1 + 0.1, fcy, WZ + 0.1);
-  box(0.12, fy1 - fy0, 0.18, hullDark, fcx, fcy, WZ + 0.05);
-  box(fx1 - fx0, 0.1, 0.18, hullDark, fcx, fcy + 0.35, WZ + 0.05);
-  for (let x = fx0 + 0.2; x <= fx1 - 0.1; x += 0.6) {
-    mesh(new THREE.SphereGeometry(0.045, 8, 6), hullDark, x, fy1 + 0.1, WZ + 0.31);
-    mesh(new THREE.SphereGeometry(0.045, 8, 6), hullDark, x, fy0 - 0.1, WZ + 0.41);
+  box(0.4, 0.28, vlen + 0.5, hullMid, -7.85, vy1 + 0.1, vzc);
+  box(0.5, 0.32, vlen + 0.5, hullMid, -7.8, vy0 - 0.1, vzc);
+  box(0.4, vh + 0.5, 0.28, hullMid, -7.85, vyc, vz0 - 0.1);
+  box(0.4, vh + 0.5, 0.28, hullMid, -7.85, vyc, vz1 + 0.1);
+  box(0.18, vh, 0.12, hullDark, -7.95, vyc, vzc);
+  box(0.18, 0.1, vlen, hullDark, -7.95, vyc + 0.35, vzc);
+  for (let z = vz0 + 0.2; z <= vz1 - 0.1; z += 0.6) {
+    mesh(new THREE.SphereGeometry(0.045, 8, 6), hullDark, -7.64, vy1 + 0.1, z);
+    mesh(new THREE.SphereGeometry(0.045, 8, 6), hullDark, -7.54, vy0 - 0.1, z);
   }
-  box(fx1 - fx0 - 0.2, 0.04, 0.04, cyan, fcx, fy0 + 0.08, WZ + 0.42).castShadow = false;
-  const glass = new THREE.Mesh(new THREE.PlaneGeometry(fx1 - fx0, fy1 - fy0), new THREE.MeshBasicMaterial({ color: color('--atmo'), transparent: true, opacity: 0.05, depthWrite: false }));
-  glass.position.set(fcx, fcy, WZ + 0.02);
+  box(0.04, 0.04, vlen - 0.2, cyan, -7.54, vy0 + 0.08, vzc).castShadow = false;
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(vlen, vh), new THREE.MeshBasicMaterial({ color: color('--atmo'), transparent: true, opacity: 0.05, depthWrite: false }));
+  glass.position.set(-7.98, vyc, vzc);
+  glass.rotation.y = Math.PI / 2;
   scene.add(glass);
-
-  /* ---------- Outside: Earth and stars ---------- */
-
-  const space = new THREE.Group();
-  scene.add(space);
-
-  // Equirectangular Earth texture from wrapping value noise
-  const noise = (seed, periods) => {
-    let s = seed;
-    const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-    const oct = periods.map(([px, py]) => { const g = new Float32Array(px * (py + 1)); for (let i = 0; i < g.length; i++) g[i] = rand(); return { px, py, g }; });
-    return (u, v) => {
-      let sum = 0, amp = 0.5, norm = 0;
-      for (const { px, py, g } of oct) {
-        const x = u * px, y = v * py, xi = Math.floor(x), yi = Math.min(Math.floor(y), py - 1);
-        const fx = x - xi, fy = y - yi, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
-        const x0 = ((xi % px) + px) % px, x1 = (x0 + 1) % px;
-        const a = g[yi * px + x0], b = g[yi * px + x1], c = g[(yi + 1) * px + x0], d = g[(yi + 1) * px + x1];
-        sum += (a + (b - a) * sx + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sy) * amp; norm += amp; amp *= 0.5;
-      }
-      return sum / norm;
-    };
-  };
-  const land = noise(7, [[6, 3], [12, 6], [24, 12], [48, 24], [96, 48]]);
-  const vapour = noise(23, [[16, 4], [32, 10], [64, 20], [128, 40]]);
-  const C = ['--earth-deep', '--earth-ocean', '--earth-shallow', '--earth-land', '--earth-sand', '--earth-cloud'].map((n) => color(n));
-  const mixC = (a, b, t) => a.clone().lerp(b, Math.min(1, Math.max(0, t)));
-  const earthTex = canvasTexture(512, 256, (g, w, h) => {
-    const img = g.createImageData(w, h);
-    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-      const u = i / w, v = j / h, hh = land(u, v);
-      let c = hh > 0.56 ? mixC(C[3], C[4], (hh - 0.6) / 0.15) : mixC(mixC(C[0], C[1], (hh - 0.3) / 0.2), C[2], (hh - 0.5) / 0.06);
-      c = mixC(c, C[5], Math.max(0, (Math.abs(v * 2 - 1) - 0.86) / 0.1) * 0.9);
-      const k = (j * w + i) * 4;
-      img.data[k] = c.r * 255; img.data[k + 1] = c.g * 255; img.data[k + 2] = c.b * 255; img.data[k + 3] = 255;
-    }
-    g.putImageData(img, 0, 0);
-  });
-  const cloudTex = canvasTexture(512, 256, (g, w, h) => {
-    const img = g.createImageData(w, h);
-    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-      const c = vapour(i / w, j / h), a = Math.min(1, Math.max(0, (c - 0.52) / 0.14));
-      const k = (j * w + i) * 4;
-      img.data[k] = img.data[k + 1] = img.data[k + 2] = 245; img.data[k + 3] = a * 170;
-    }
-    g.putImageData(img, 0, 0);
-  });
-  const earth = new THREE.Mesh(new THREE.SphereGeometry(24, 64, 48), new THREE.MeshStandardMaterial({ map: earthTex, roughness: 0.75, metalness: 0, fog: false, envMapIntensity: 0.05 }));
-  earth.position.set(-18, -33, -62);
-  earth.rotation.z = 0.4;
-  space.add(earth);
-  const clouds = new THREE.Mesh(new THREE.SphereGeometry(24.3, 64, 48), new THREE.MeshStandardMaterial({ map: cloudTex, transparent: true, depthWrite: false, fog: false, roughness: 1, envMapIntensity: 0.05 }));
-  clouds.position.copy(earth.position);
-  clouds.rotation.z = 0.4;
-  space.add(clouds);
-  const atmo = new THREE.Mesh(new THREE.SphereGeometry(25.2, 48, 32), new THREE.MeshBasicMaterial({ color: color('--atmo'), transparent: true, opacity: 0.16, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-  atmo.position.copy(earth.position);
-  space.add(atmo);
-  // A sun just for the planet, so the room's lights don't decide its look
-  const earthSun = new THREE.DirectionalLight(color('--glare'), 1.6);
-  earthSun.position.set(20, 10, -30);
-  earthSun.target = earth;
-  space.add(earthSun);
-
-  const starField = (n, size, opacity) => {
-    const pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { pos[i * 3] = -90 + Math.random() * 130; pos[i * 3 + 1] = -50 + Math.random() * 110; pos[i * 3 + 2] = -70 - Math.random() * 60; }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: color('--cream'), size, sizeAttenuation: false, transparent: true, opacity, fog: false, depthWrite: false }));
-    space.add(pts);
-    return pts;
-  };
-  starField(1400, 1.2, 0.75);
-  const brightStars = starField(160, 2.4, 1);
-
-  live((t) => {
-    if (!motion()) return;
-    earth.rotation.y = t * 0.000012;
-    clouds.rotation.y = t * 0.000018;
-    brightStars.material.opacity = 0.65 + 0.35 * Math.sin(t * 0.002);
-  });
 
   // Cool light falling in through the viewport
   if (!small) {
-    const shaft = new THREE.SpotLight(color('--atmo'), 55, 16, 0.55, 0.8, 1.6);
-    shaft.position.set(fcx, fcy + 0.4, WZ - 0.6);
-    shaft.target.position.set(-2.5, 0, -1);
+    const shaft = new THREE.SpotLight(color('--atmo'), 45, 14, 0.6, 0.8, 1.6);
+    shaft.position.set(-8.6, vyc + 0.4, vzc);
+    shaft.target.position.set(-4.5, 0, -2.6);
     scene.add(shaft, shaft.target);
   }
+
+  /* ---------- The cockpit door: two panels that slide into the wall ---------- */
+
+  const doorY = 4.34;
+  box(2.5, 0.25, 0.3, hullMid, 2.3, 5.78, WZ + 0.1);
+  box(0.25, 2.9, 0.3, hullMid, 1.17, doorY, WZ + 0.1);
+  box(0.25, 2.9, 0.3, hullMid, 3.43, doorY, WZ + 0.1);
+  box(1.6, 0.05, 0.05, cyan, 2.3, 5.95, WZ + 0.2).castShadow = false;
+  const doorLampMat = new THREE.MeshBasicMaterial({ color: color('--bebop-red'), toneMapped: false });
+  box(0.3, 0.1, 0.05, doorLampMat, 2.3, 6.12, WZ + 0.2).castShadow = false;
+  const panelFace = mat('--panel-door', 0.4, 0.7);
+  const panels = [-1, 1].map((side) => {
+    const p = new THREE.Group();
+    box(1.0, 2.62, 0.1, panelFace, 0, 0, 0, p);
+    box(0.7, 1.0, 0.03, hullDark, 0, 0.55, 0.06, p);
+    box(0.7, 0.7, 0.03, hullDark, 0, -0.55, 0.06, p);
+    box(0.06, 0.6, 0.02, cyan, side * -0.42, 0.55, 0.08, p).castShadow = false;
+    box(1.0, 0.07, 0.02, amberGlow, 0, 0, 0.07, p).castShadow = false;
+    p.position.set(2.3 + side * 0.5, doorY, WZ - 0.08);
+    p.userData.closedX = p.position.x;
+    p.userData.side = side;
+    scene.add(p);
+    return p;
+  });
+  const doorHits = [];
+  panels.forEach((p) => p.traverse((o) => { if (o.isMesh) doorHits.push(o); }));
+  // An invisible, generous hit area over the whole doorway and frame
+  const doorPad = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 3.4), new THREE.MeshBasicMaterial({ visible: false }));
+  doorPad.position.set(2.3, doorY + 0.15, WZ + 0.3);
+  scene.add(doorPad);
+  doorHits.push(doorPad);
+  let doorOpen = 0, doorGoal = 0;
+  live((t, dt) => {
+    doorOpen += Math.sign(doorGoal - doorOpen) * Math.min(Math.abs(doorGoal - doorOpen), dt / (motion() ? 0.8 : 0.01));
+    const k = doorOpen < 0.5 ? 2 * doorOpen * doorOpen : 1 - Math.pow(-2 * doorOpen + 2, 2) / 2;
+    panels.forEach((p) => { p.position.x = p.userData.closedX + p.userData.side * k * 0.98; });
+    doorLampMat.color.copy(color(doorOpen > 0.5 ? '--neon' : '--bebop-red'));
+  });
 
   /* ---------- Pipes, conduit, neon ---------- */
 
@@ -698,6 +668,8 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
     update(t, dt) { updaters.forEach((fn) => fn(t, dt)); },
     redraw,
     dogHits,
+    doorHits,
+    setDoor(open) { doorGoal = open ? 1 : 0; },
     pokeDog() { happy = 2.5; },
   };
 }
