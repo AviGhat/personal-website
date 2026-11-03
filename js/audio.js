@@ -194,7 +194,7 @@
 
   /* ---------- Arcade cabinet: fight sounds ---------- */
 
-  // kind: 'hit' (a landed blow), 'heavy', 'block', 'whiff', 'ko', 'blip' (menus)
+  // kind: 'hit' (a landed blow), 'heavy', 'block', 'whiff', 'ko', 'super', 'blip' (menus)
   function fx(kind) {
     if (!enabled || !live()) return;
     const t = ctx.currentTime;
@@ -208,6 +208,11 @@
       hiss(t, 0.05, 0.06, 'bandpass', 4200);
     } else if (kind === 'whiff') {
       hiss(t, 0.09, 0.05, 'bandpass', 1800);
+    } else if (kind === 'super') {
+      // The flash: a charge sweeping up, a crack, then a low boom
+      tone('sawtooth', 120, 1400, t, 0.5, 0.05, 0.02);
+      hiss(t + 0.45, 0.3, 0.2, 'highpass', 2500);
+      tone('sine', 90, 35, t + 0.5, 0.6, 0.5);
     } else if (kind === 'ko') {
       tone('sine', 180, 40, t, 0.6, 0.5);
       tone('square', 440, 110, t + 0.05, 0.9, 0.05, 0.01);
