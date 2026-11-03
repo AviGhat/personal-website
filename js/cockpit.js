@@ -11,6 +11,8 @@ const CX = 2.3;          // cockpit centre line (matches the stairs and the door
 const FY = 3.03;         // cockpit deck height (top of the landing)
 const AXIS_Y = FY + 1.6; // vanishing point height
 
+export const THRUST_DEFAULT = 0.3;   // gives the cruise speed the scene was tuned at
+
 export function buildHyperspace({ scene, color, motion, small }) {
   const N = small ? 900 : 1600;
   const FAR = -340;
@@ -128,23 +130,30 @@ export function buildHyperspace({ scene, color, motion, small }) {
   const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.035, 64, 48), new THREE.MeshBasicMaterial({ color: color('--atmo'), transparent: true, opacity: 0.22, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   planet.add(atmo);
 
+  // Speed follows the cockpit throttle: 0 idles, 1 is full burn. Streaks stretch as we speed up
+  let thrust = THRUST_DEFAULT, speed = 1;
+  const speedFor = (k) => 0.25 + k * 2.5;
+
   const m = streaks.instanceMatrix.array;
   const write = () => {
+    const stretch = 0.45 + 0.55 * speed;
     for (let i = 0; i < N; i++) {
       const l = lines[i], o = i * 16;
       m[o] = l.w; m[o + 1] = 0; m[o + 2] = 0; m[o + 3] = 0;
       m[o + 4] = 0; m[o + 5] = l.w; m[o + 6] = 0; m[o + 7] = 0;
-      m[o + 8] = 0; m[o + 9] = 0; m[o + 10] = l.len; m[o + 11] = 0;
-      m[o + 12] = l.x; m[o + 13] = l.y; m[o + 14] = l.z - l.len / 2; m[o + 15] = 1;
+      m[o + 8] = 0; m[o + 9] = 0; m[o + 10] = l.len * stretch; m[o + 11] = 0;
+      m[o + 12] = l.x; m[o + 13] = l.y; m[o + 14] = l.z - l.len * stretch / 2; m[o + 15] = 1;
     }
     streaks.instanceMatrix.needsUpdate = true;
   };
   write();
 
   return {
+    setThrust(k) { thrust = k; },
     update(t, dt) {
       if (!motion()) return;
-      const v = 150 * dt;
+      speed += (speedFor(thrust) - speed) * Math.min(1, dt * 1.8);   // the drive spools up and down, not instantly
+      const v = 150 * dt * speed;
       for (const l of lines) {
         l.z += v * (0.8 + l.w * 2);
         if (l.z > l.end) place(l, false);
@@ -396,8 +405,27 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
 
   /* ---------- Console: radar, pilot file monitor, status, buttons ---------- */
 
+  // A console body whose top follows its tilted panel, so the panel (and all
+  // it carries) sits on the body rather than sinking into it. The panel is
+  // centred at height `top`, depth `zc`, tipped toward the pilot by `tilt`.
+  const consoleBody = (w, d, top, zc, tilt, parent) => {
+    const yAt = (z) => top - (z - zc) * Math.tan(tilt) - 0.035;
+    const shape = new THREE.Shape();   // profile in (-z, y), extruded across x
+    shape.moveTo(-d / 2, 0);
+    shape.lineTo(-d / 2, yAt(d / 2));
+    shape.lineTo(d / 2, yAt(-d / 2));
+    shape.lineTo(d / 2, 0);
+    shape.closePath();
+    const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: w, bevelEnabled: false }), trimM);
+    mesh.rotation.y = Math.PI / 2;
+    mesh.position.x = -w / 2;
+    mesh.castShadow = mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+
   const dash = new THREE.Group();
-  box(4.6, 0.7, 1.0, trimM, 0, 0.35, 0, dash);
+  consoleBody(4.6, 1.0, 0.73, 0.15, 0.45, dash);
   const slope = new THREE.Group();
   slope.position.set(0, 0.73, 0.15);
   slope.rotation.x = 0.45;    // face the pilot
@@ -408,7 +436,7 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
   // Side consoles angled toward the seats
   [[-0.05, 0.55], [4.65, -0.55]].forEach(([x, ry]) => {
     const g = new THREE.Group();
-    box(1.0, 0.95, 0.8, trimM, 0, 0.47, 0, g);
+    consoleBody(1.0, 0.8, 0.97, 0, 0.35, g);
     const top = new THREE.Group(); top.position.y = 0.97; top.rotation.x = 0.35; g.add(top);
     box(1.0, 0.05, 0.75, darkM, 0, 0, 0, top);
     g.userData.top = top;
@@ -431,14 +459,145 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
     return { c, tex, mesh: s };
   };
   // Radar and status lie in the sloped panel; the pilot file monitor stands up in the middle
-  const radar = screen(0.62, 0.62, 256, 256, slope, -1.35, 0.035, 0, -Math.PI / 2);
-  const status = screen(0.7, 0.42, 256, 160, slope, 1.35, 0.035, 0, -Math.PI / 2);
+  const radar = screen(0.62, 0.62, 256, 256, slope, -0.95, 0.035, 0, -Math.PI / 2);
+  const status = screen(0.7, 0.42, 256, 160, slope, -0.12, 0.035, 0, -Math.PI / 2);   // centre, where the pilot reads it
   const aboutStand = new THREE.Group();
-  aboutStand.position.set(CX + 0.15, FY + 0.55, -15.0);   // centre-right of the console, under the horizon line
-  aboutStand.rotation.set(-0.15, -0.25, 0, 'YXZ');   // turned toward the pilot
+  // Stands on the console's back ledge, behind everything on the sloped panel, so it
+  // never hides a control and never dips into the dash
+  aboutStand.position.set(CX + 0.32, FY + 0.9, -15.8);
+  aboutStand.rotation.set(-0.05, -0.43, 0, 'YXZ');   // turned toward the pilot
   scene.add(aboutStand);
-  box(0.12, 0.3, 0.12, darkM, 0, -0.05, -0.05, aboutStand);
-  const about = screen(0.95, 0.6, 320, 200, aboutStand, 0, 0.42, 0);
+  box(0.3, 0.02, 0.14, darkM, 0, 0.01, 0, aboutStand);   // foot
+  box(0.08, 0.16, 0.06, darkM, 0, 0.09, -0.02, aboutStand);   // neck
+  const about = screen(0.8, 0.5, 320, 200, aboutStand, 0, 0.45, 0);
+
+  /* ---------- Throttle: a lever in a slotted quadrant, front and centre ---------- */
+
+  const throttle = new THREE.Group();
+  throttle.position.set(0.5, 0.03, 0.08);   // under the pilot's right hand
+  slope.add(throttle);
+  box(0.2, 0.05, 0.42, darkM, 0, 0.025, 0, throttle);                          // housing
+  box(0.03, 0.004, 0.34, mat('--space-black', 0.4, 0.4), 0, 0.052, 0, throttle);   // slot
+  const tickM = glow('--amber');
+  for (let k = 0; k < 5; k++) box(0.035, 0.005, 0.008, tickM, 0.065, 0.053, -0.15 + k * 0.075, throttle).castShadow = false;
+  const lever = new THREE.Group();
+  lever.position.y = 0.05;
+  throttle.add(lever);
+  box(0.022, 0.24, 0.022, mat('--fx-steel', 0.3, 0.85), 0, 0.12, 0, lever);
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.15, 14), mat('--bebop-red', 0.4, 0.1));
+  grip.rotation.z = Math.PI / 2;
+  grip.position.y = 0.245;
+  lever.add(grip);
+  const throttlePad = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.36, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
+  throttlePad.position.y = 0.16;
+  throttle.add(throttlePad);
+  let thrust = THRUST_DEFAULT, thrustShown = THRUST_DEFAULT;
+  // Lever angle: pushed up and away idles, pulled down toward you is full burn
+  const leverAngle = (k) => -0.65 + 1.3 * k;
+  lever.rotation.x = leverAngle(thrust);
+
+  /* ---------- Cassette deck (plays the playlist) and loose headphones ---------- */
+
+  const shellM = mat('--crt-shell', 0.5, 0.35);
+  const keyM = mat('--bone', 0.6, 0.1);
+  const tape = new THREE.Group();
+  tape.position.set(-1.62, 0.03, 0.08);   // left of the radar, clear of the pilot file monitor
+  tape.rotation.y = 0.12;   // turned a touch toward the pilot
+  tape.scale.setScalar(0.85);
+  slope.add(tape);
+  rbox(0.56, 0.1, 0.34, 0.015, shellM, 0, 0.05, 0, tape);         // body
+  box(0.36, 0.008, 0.21, darkM, -0.06, 0.1, -0.035, tape);         // cassette well
+  // The cassette: a hand-labelled mix tape with two reels showing
+  const paintLabel = (g, w, h) => {
+    g.fillStyle = token('--cream'); g.fillRect(0, 0, w, h);
+    g.fillStyle = token('--bebop-red'); g.fillRect(0, 18, w, 12);
+    g.fillStyle = token('--amber'); g.fillRect(0, 30, w, 5);
+    g.fillStyle = token('--space-black'); g.fillRect(60, 56, 136, 44);   // reel window
+    g.fillStyle = token('--paper-ink'); g.font = '20px VT323, monospace';
+    g.fillText('SIDE A  /  IT JUST IS...', 10, 14);
+    g.font = '15px VT323, monospace';
+    g.fillText('MIX', 10, 76); g.fillText('AG', 214, 76);
+  };
+  const labelTex = canvasTexture(256, 128, paintLabel);
+  if (document.fonts) document.fonts.ready.then(() => { paintLabel(labelTex.image.getContext('2d'), 256, 128); labelTex.needsUpdate = true; });
+  box(0.32, 0.016, 0.19, darkM, -0.06, 0.108, -0.035, tape);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.15), new THREE.MeshStandardMaterial({ map: labelTex, roughness: 0.8 }));
+  label.rotation.x = -Math.PI / 2;
+  label.position.set(-0.06, 0.1165, -0.035);
+  tape.add(label);
+  const reels = [-0.105, -0.015].map((x) => {
+    const r = new THREE.Group();
+    r.position.set(x, 0.118, -0.025);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.004, 6), keyM);
+    r.add(hub);
+    box(0.034, 0.005, 0.006, darkM, 0, 0.001, 0, r);   // a spoke so the spin shows
+    tape.add(r);
+    return r;
+  });
+  const lid = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.21), new THREE.MeshStandardMaterial({
+    color: color('--fan-light'), transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0, depthWrite: false,
+  }));
+  lid.rotation.x = -Math.PI / 2;
+  lid.position.set(-0.06, 0.124, -0.035);
+  tape.add(lid);
+  // Piano keys along the front: rewind, play, fast forward, stop, eject
+  const keys = [-0.22, -0.135, -0.05, 0.035, 0.12].map((x, k) =>
+    box(0.075, 0.026, 0.06, k === 1 ? mat('--bebop-red', 0.5, 0.1) : keyM, x, 0.108, 0.125, tape));
+  const playKey = keys[1];
+  // Level meter and run lamp on the right
+  const vu = Array.from({ length: 6 }, (_, k) => {
+    const m = new THREE.MeshBasicMaterial({ color: color(k > 3 ? '--bebop-red' : '--amber'), toneMapped: false });
+    box(0.07, 0.008, 0.018, m, 0.2, 0.102, -0.13 + k * 0.03, tape).castShadow = false;
+    return { m, base: color(k > 3 ? '--bebop-red' : '--amber') };
+  });
+  const lampOn = color('--neon'), lampIdle = color('--amber'), lensC = color('--neon-cyan');
+  const runLamp = new THREE.MeshBasicMaterial({ color: color('--amber'), toneMapped: false });
+  box(0.03, 0.01, 0.03, runLamp, 0.2, 0.104, 0.1, tape);
+  // The holo projector lens, where the music screen beams from
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.012, 16), glow('--neon-cyan'));
+  lens.position.set(0.2, 0.106, 0.04);
+  tape.add(lens);
+  // The empty PHONES socket on the side, the headphone jack lying just short of it
+  const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.012, 12), mat('--space-black', 0.4, 0.8));
+  socket.rotation.z = Math.PI / 2;
+  socket.position.set(-0.282, 0.05, 0.1);
+  tape.add(socket);
+  // Click target, and the pose the camera leans in to
+  const tapePad = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.22, 0.42), new THREE.MeshBasicMaterial({ visible: false }));
+  tapePad.position.y = 0.08;
+  tape.add(tapePad);
+  const tapeAnchor = new THREE.Object3D();
+  tapeAnchor.position.set(0, 0.1, 0);
+  tapeAnchor.rotation.x = -0.9;   // look in from above and in front, like leaning over the console
+  tape.add(tapeAnchor);
+  const tapeTop = new THREE.Object3D();   // top of the back edge: the hologram stands above this
+  tapeTop.position.set(0, 0.13, -0.18);
+  tape.add(tapeTop);
+
+  const phones = new THREE.Group();
+  phones.position.set(-2.06, 0.03, -0.04);   // dropped beside the deck
+  phones.rotation.y = 0.1;
+  slope.add(phones);
+  const cupM = mat('--soot', 0.45, 0.5);
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.011, 8, 28, Math.PI), cupM);
+  band.rotation.x = -Math.PI / 2;
+  band.position.y = 0.016;
+  phones.add(band);
+  [-0.1, 0.1].forEach((x) => {
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.046, 0.032, 20), cupM);
+    cup.position.set(x, 0.02, 0.012);
+    phones.add(cup);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.012, 8, 20), padM);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, 0.038, 0.012);
+    phones.add(ring);
+    box(0.05, 0.004, 0.008, mat('--bebop-red', 0.5, 0.2), x, 0.004, 0.06, phones);   // red trim
+  });
+  // A loose cable, its jack lying unplugged
+  const cable = new THREE.CatmullRomCurve3([V(0.1, 0.008, 0.05), V(0.17, 0.008, 0.12), V(0.09, 0.008, 0.2), V(0.15, 0.008, 0.27), V(0.19, 0.008, 0.25)]);
+  phones.add(new THREE.Mesh(new THREE.TubeGeometry(cable, 40, 0.004, 6, false), darkM));
+  rod(V(0.19, 0.008, 0.25), V(0.215, 0.008, 0.245), 0.008, darkM, phones);
+  rod(V(0.215, 0.008, 0.245), V(0.232, 0.008, 0.242), 0.004, mat('--amber', 0.3, 0.9), phones);
 
   // Buttons: little lit keys that blink at their own pace
   const buttons = [];
@@ -452,8 +611,8 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
       buttons.push({ m, base: color(name), period: 300 + Math.random() * 1800, phase: Math.random() * 3000, steady: Math.random() < 0.35 });
     }
   };
-  addButtons(slope, 8, 3, -0.9, -0.3, 0.11);
-  addButtons(slope, 4, 4, 0.6, -0.33, 0.11);
+  addButtons(slope, 3, 2, 0.36, -0.39, 0.11);   // behind the throttle
+  addButtons(slope, 4, 4, 1.2, -0.33, 0.11);
   slopes.forEach((top) => addButtons(top, 6, 4, -0.33, -0.22, 0.12));
   // Throttle and flight stick
   rod(V(CX - 1.7, FY + 0.75, -13.9), V(CX - 1.7, FY + 1.02, -13.8), 0.025, darkM);
@@ -510,12 +669,22 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
   };
 
   const drawStatus = (t) => {
-    const g = status.c.getContext('2d'), s = t / 1000;
+    const g = status.c.getContext('2d'), s = t / 1000, k = thrustShown;
     g.fillStyle = token('--screen-bg'); g.fillRect(0, 0, 256, 160);
-    g.fillStyle = token('--amber'); g.font = '18px VT323, monospace';
-    g.fillText('HYPERDRIVE  ENGAGED', 10, 22);
+    g.fillStyle = token(k > 0.85 ? '--bebop-red' : '--amber'); g.font = '18px VT323, monospace';
+    g.fillText(k < 0.06 ? 'HYPERDRIVE  IDLE' : k > 0.85 ? 'HYPERDRIVE  FULL BURN' : 'HYPERDRIVE  ENGAGED', 10, 22);
+    g.textAlign = 'right';
+    g.fillText(`${String(Math.round(k * 100)).padStart(3, ' ')}%`, 246, 22);
+    g.textAlign = 'left';
+    // DRIVE reads the throttle; the shield thins and comms get noisier as speed builds
+    const level = [
+      0.04 + k * 0.96,
+      0.95 - k * 0.45 + 0.04 * Math.sin(s * 0.7),
+      0.8 + 0.1 * Math.sin(s * 0.3),
+      0.6 + 0.3 * Math.abs(Math.sin(s * (0.9 + k * 6))),
+    ];
     ['DRIVE', 'SHIELD', 'O2', 'COMMS'].forEach((n, i) => {
-      const v = 0.55 + 0.4 * Math.abs(Math.sin(s * (0.4 + i * 0.23) + i));
+      const v = level[i];
       g.fillStyle = token('--ink-dim'); g.fillText(n, 10, 52 + i * 26);
       g.fillStyle = token(i === 0 ? '--neon-cyan' : '--neon');
       for (let k = 0; k < Math.round(v * 14); k++) g.fillRect(80 + k * 11, 40 + i * 26, 8, 14);
@@ -566,12 +735,22 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
   };
 
   let hot = false;
+  let tapeHot = false;
+  let playing = false;
   return {
     aboutScreen: about.mesh,
     aboutHits: [about.mesh],
+    tapeHits: [tapePad],
+    tapeAnchor,
+    tapeLens: lens,
+    tapeTop,
     ownSeat,
-    seat: { pos: V(1.45, FY + 1.55, -13.3), target: V(1.95, FY + 1.05, -20) },   // eyes just in front of the headrest
+    seat: { pos: V(1.45, FY + 1.55, -13.3), target: V(2.15, FY + 1.05, -20) },   // eyes just in front of the headrest
     setHot(v) { hot = v; },
+    throttleHits: [throttlePad],
+    setThrust(k) { thrust = k; },
+    setTapeHot(v) { tapeHot = v; },
+    setPlaying(v) { playing = v; },
     update(t, dt) {
       if (motion()) platter.rotation.y -= dt * 3.5;   // 33 1/3 rpm
       buttons.forEach((b) => {
@@ -579,6 +758,18 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
         b.m.color.copy(b.base).multiplyScalar(on ? 1 : 0.15);
       });
       drawPort(dt);
+      thrustShown += (thrust - thrustShown) * Math.min(1, dt * 1.8);   // matches the drive spooling
+      lever.rotation.x += (leverAngle(thrust) - lever.rotation.x) * Math.min(1, dt * 14);
+      // The deck: reels turn and the meter jumps while the playlist runs
+      const run = playing && motion();
+      if (run) reels.forEach((r) => { r.rotation.y -= dt * 2.4; });
+      playKey.position.y = playing ? 0.1 : 0.108;
+      vu.forEach((v, k) => {
+        const lvl = playing ? (run ? 0.5 + 0.5 * Math.sin(t * 0.011 + k * 0.7) * Math.sin(t * 0.0047 + k) + 0.2 * Math.random() : 0.6) : 0;
+        v.m.color.copy(v.base).multiplyScalar(lvl * 6 > k ? 1 : 0.12);
+      });
+      runLamp.color.copy(playing ? lampOn : lampIdle).multiplyScalar(playing || tapeHot || Math.floor(t / 700) % 2 ? 1 : 0.2);
+      lens.material.color.copy(lensC).multiplyScalar(tapeHot ? 1 : 0.55);
     },
     redraw(t) { drawRadar(t); drawStatus(t); drawAbout(t, hot); },
   };

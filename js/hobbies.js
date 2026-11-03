@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { buildWorld } from './lounge-world.js';
-import { buildCockpit, buildHyperspace } from './cockpit.js';
+import { buildCockpit, buildHyperspace, THRUST_DEFAULT } from './cockpit.js';
+import { createTape } from './tape.js';
+import { createFighter } from './fighter.js';
+import { buildCabinet } from './arcade.js';
 
 /* ==========================================================
    Off Duty: a ship's lounge with four CRT monitors, and a
@@ -9,7 +12,9 @@ import { buildCockpit, buildHyperspace } from './cockpit.js';
    Click a monitor (or a channel button) and the camera flies in,
    then a terminal opens over the screen with that hobby. Click the
    door at the top of the stairs to climb into the pilot's seat,
-   where the console monitor opens the pilot file (about me).
+   where the console monitor opens the pilot file (about me) and the
+   tape deck projects a player for the Spotify playlist. Back in the
+   lounge, the arcade cabinet plays Dock 9 Brawl.
    ========================================================== */
 
 const root = document.documentElement;
@@ -29,8 +34,35 @@ const hobbies = [...tv.querySelectorAll('[data-hobby]')];
 const chButtons = [...document.querySelectorAll('[data-channel]')];
 const deckButtons = [...document.querySelectorAll('[data-deck]')];
 const pilotButtons = [...document.querySelectorAll('[data-pilot]')];
+const tapeButtons = [...document.querySelectorAll('[data-tape]')];
+const holo = document.querySelector('[data-holo]');
+const tape = createTape(holo);
+const cabPanel = document.querySelector('[data-cab]');
+const game = createFighter(cabPanel.querySelector('[data-cab-canvas]'));
 const hint = document.querySelector('[data-hint]');
 const ABOUT = 4;   // the pilot file is the fifth terminal
+const DECK = 5;    // the tape deck's holo player; ABOUT and DECK live in the cockpit
+const ARCADE = 6;  // the lounge arcade cabinet
+const onBridge = (i) => i === ABOUT || i === DECK;
+const chButton = (i) => chButtons.find((b) => Number(b.dataset.channel) === i);
+
+/* ---------- Throttle: the lever, the Thrust slider and the keys all set this ---------- */
+
+const thrustInput = document.querySelector('[data-thrust]');
+const thrustNum = document.querySelector('[data-thrust-num]');
+let thrust = THRUST_DEFAULT;
+function setThrust(k) {
+  k = Math.min(1, Math.max(0, k));
+  if (Math.floor(k * 4) !== Math.floor(thrust * 4)) sound('beep');   // a click at each detent
+  thrust = k;
+  const pct = Math.round(k * 100);
+  thrustInput.value = String(pct);
+  thrustInput.style.setProperty('--fill', `${pct}%`);
+  thrustNum.textContent = `${pct}%`;
+  thrustInput.setAttribute('aria-valuetext', k < 0.06 ? 'Idle' : k > 0.85 ? `Full burn, ${pct}%` : `${pct}%`);
+  if (scene3d) scene3d.setThrust(k);
+}
+thrustInput.addEventListener('input', () => setThrust(Number(thrustInput.value) / 100));
 
 const CHANNELS = [
   { name: 'Music', ink: '--amber' },
@@ -46,6 +78,13 @@ let opener = null;
 let mode = 'lounge';   // lounge | transit | cockpit
 
 function showTerminal(i) {
+  if (i === DECK) { tape.show(); return; }
+  if (i === ARCADE) {
+    cabPanel.hidden = false;
+    game.open();
+    cabPanel.focus({ preventScroll: true });
+    return;
+  }
   hobbies.forEach((h, k) => { h.hidden = k !== i; });
   tvLabel.textContent = i === ABOUT ? 'Bridge / Pilot file' : `CH ${String(i + 1).padStart(2, '0')} / Receiving`;
   tv.classList.toggle('is-pilot', i === ABOUT);
@@ -56,13 +95,17 @@ function showTerminal(i) {
   hobbies[i].focus({ preventScroll: true });
 }
 function hideTerminal() {
+  tape.hide();
+  game.close();
+  cabPanel.hidden = true;
   tv.classList.remove('is-open');
   tv.hidden = true;
 }
 function markChannel(i) {
   lounge.classList.toggle('is-tuned', i >= 0);
-  chButtons.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
+  chButtons.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.channel) === i)));
   pilotButtons.forEach((b) => b.setAttribute('aria-pressed', String(i === ABOUT)));
+  tapeButtons.forEach((b) => b.setAttribute('aria-pressed', String(i === DECK)));
 }
 function setMode(m) {
   mode = m;
@@ -82,12 +125,12 @@ try {
 }
 
 function open(i, from) {
-  if (i === current && !tv.hidden) return;
+  if (i === current && !(i === DECK ? holo : i === ARCADE ? cabPanel : tv).hidden) return;
   // Each terminal lives on its own deck: walk there first
-  if (scene3d && i === ABOUT && mode === 'lounge') { goCockpit(() => open(i, from)); return; }
-  if (scene3d && i < ABOUT && mode === 'cockpit') { goLounge(() => open(i, from)); return; }
+  if (scene3d && onBridge(i) && mode === 'lounge') { goCockpit(() => open(i, from)); return; }
+  if (scene3d && !onBridge(i) && mode === 'cockpit') { goLounge(() => open(i, from)); return; }
   if (mode === 'transit') return;
-  opener = from || chButtons[i] || pilotButtons[0];
+  opener = from || chButton(i) || (i === DECK ? tapeButtons[0] : pilotButtons[0]);
   current = i;
   markChannel(i);
   hideTerminal();
@@ -129,12 +172,28 @@ function goLounge(done) {
 
 chButtons.forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.channel), b)));
 pilotButtons.forEach((b) => b.addEventListener('click', () => open(ABOUT, b)));
+tapeButtons.forEach((b) => b.addEventListener('click', () => open(DECK, b)));
+holo.querySelector('[data-holo-close]').addEventListener('click', close);
+cabPanel.querySelector('[data-cab-close]').addEventListener('click', close);
+// Touch pad: held while the finger is down
+cabPanel.querySelectorAll('[data-pad]').forEach((b) => {
+  const set = (on) => (e) => { e.preventDefault(); b.classList.toggle('is-down', on); game.press(b.dataset.pad, on); };
+  b.addEventListener('pointerdown', set(true));
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((type) => b.addEventListener(type, set(false)));
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+});
 deckButtons.forEach((b) => b.addEventListener('click', () => (b.dataset.deck === 'cockpit' ? goCockpit() : goLounge())));
 tv.querySelector('[data-tv-close]').addEventListener('click', close);
 tv.querySelector('[data-tv-prev]').addEventListener('click', () => open((current + 3) % 4));
 tv.querySelector('[data-tv-next]').addEventListener('click', () => open((current + 1) % 4));
 window.addEventListener('keydown', (e) => {
   if (document.body.classList.contains('is-locked')) return;   // boot screen
+  // In the seat with nothing open: down pulls the throttle (faster), up eases it off
+  if (mode === 'cockpit' && current < 0 && !(e.target.closest && e.target.closest('input, textarea'))) {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowdown' || k === 's') { e.preventDefault(); setThrust(thrust + 0.1); return; }
+    if (k === 'arrowup' || k === 'w') { e.preventDefault(); setThrust(thrust - 0.1); return; }
+  }
   if (e.key !== 'Escape') return;
   if (current >= 0) { e.preventDefault(); close(); }
   else if (mode === 'cockpit') { e.preventDefault(); goLounge(); }
@@ -216,6 +275,7 @@ function buildScene() {
   const world = buildWorld({ scene, renderer, token, color, box, rbox, rod, canvasTexture, small: small(), motion });
   const hyper = buildHyperspace({ scene, color, motion, small: small() });
   const cockpit = buildCockpit({ scene, token, color, box, rbox, rod, canvasTexture, small: small(), motion });
+  const arcade = buildCabinet({ scene, token, color, box, canvasTexture, small: small(), motion, game });
 
   /* ---------- CRT monitors ---------- */
 
@@ -417,7 +477,7 @@ function buildScene() {
     if (focused >= 0 && !tween) Object.assign(view, focusPose(focused));
   };
 
-  const screenOf = (i) => (i === ABOUT ? cockpit.aboutScreen : monitors[i].screen);
+  const screenOf = (i) => (i === ARCADE ? arcade.screen : i === DECK ? cockpit.tapeAnchor : i === ABOUT ? cockpit.aboutScreen : monitors[i].screen);
   const focusPose = (i) => {
     const s = screenOf(i);
     const center = new THREE.Vector3();
@@ -428,11 +488,13 @@ function buildScene() {
     const up = new THREE.Vector3(0, 1, 0);
     const right = new THREE.Vector3().crossVectors(up, normal).normalize();
     const portrait = camera.aspect < 1;
-    const near = i === ABOUT;   // the console monitor is small and close; lean in rather than fly
-    const pos = center.clone().addScaledVector(normal, near ? (portrait ? 1.7 : 1.25) : (portrait ? 3.0 : 2.35)).addScaledVector(up, near ? 0.05 : 0.15);
+    const near = onBridge(i);   // the console monitor is small and close; lean in rather than fly
+    const pos = center.clone().addScaledVector(normal, i === ARCADE ? (portrait ? 4.2 : 3.1) : i === DECK ? 2.1 : near ? (portrait ? 1.7 : 1.25) : (portrait ? 3.0 : 2.35)).addScaledVector(up, near ? 0.05 : 0.15);
     // Leave room for the terminal: the monitor sits left on wide screens, high on tall ones
     const target = center.clone();
-    if (portrait) target.addScaledVector(up, near ? -0.4 : -0.55);
+    // The deck projects its panel straight up: aim high so the deck sits low in the frame
+    if (i === DECK) target.addScaledVector(up, portrait ? 1.05 : 0.62);
+    else if (portrait) target.addScaledVector(up, i === ARCADE ? -1.2 : near ? -0.4 : -0.55);
     else target.addScaledVector(right, near ? 0.32 : 0.55);
     return { pos, target };
   };
@@ -484,10 +546,11 @@ function buildScene() {
   // What the pointer is over, by deck
   const target = (e) => {
     aim(e);
-    if (deck === 'cockpit') return hits(cockpit.aboutHits) ? { kind: 'about' } : null;
+    if (deck === 'cockpit') return hits(cockpit.aboutHits) ? { kind: 'about' } : hits(cockpit.tapeHits) ? { kind: 'tape' } : hits(cockpit.throttleHits) ? { kind: 'throttle' } : null;
     if (deck !== 'lounge') return null;
     const i = pick();
     if (i >= 0) return { kind: 'monitor', i };
+    if (hits(arcade.hits)) return { kind: 'arcade' };
     if (hits(world.doorHits)) return { kind: 'door' };
     if (hits(world.dogHits)) return { kind: 'dog' };
     return null;
@@ -495,13 +558,24 @@ function buildScene() {
 
   const el = renderer.domElement;
   let hotKey = '';
+  let lever = null;   // dragging the throttle
   el.addEventListener('pointerdown', (e) => {
+    if (deck === 'cockpit' && focused < 0) {
+      aim(e);
+      if (hits(cockpit.throttleHits)) {
+        lever = { y: e.clientY, k: thrust };
+        el.setPointerCapture(e.pointerId);
+        return;
+      }
+    }
     drag = { x: e.clientX, y: e.clientY, yaw: yawGoal, headYaw: head.yawGoal, headPitch: head.pitchGoal, moved: false };
     el.setPointerCapture(e.pointerId);
   });
   el.addEventListener('pointermove', (e) => {
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
     pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
+    // Pull down for more thrust, push up to ease off
+    if (lever) { setThrust(lever.k + (e.clientY - lever.y) / 220); return; }
     if (drag) {
       const dx = e.clientX - drag.x;
       const dy = e.clientY - drag.y;
@@ -514,23 +588,28 @@ function buildScene() {
       return;
     }
     const t = target(e);
-    el.style.cursor = t ? 'pointer' : (deck === 'transit' ? 'default' : 'grab');
+    el.style.cursor = t ? (t.kind === 'throttle' ? 'ns-resize' : 'pointer') : (deck === 'transit' ? 'default' : 'grab');
     const key = t ? t.kind + (t.i ?? '') : '';
     if (key !== hotKey) {
       hotKey = key;
       if (t && t.kind !== 'dog') sound('buzz');
     }
     hovered = t && t.kind === 'monitor' ? t.i : -1;
+    arcade.setHot(!!t && t.kind === 'arcade');
     cockpit.setHot(!!t && t.kind === 'about');
-    chButtons.forEach((b, k) => b.classList.toggle('is-hot', k === hovered));
+    cockpit.setTapeHot(!!t && t.kind === 'tape');
+    chButtons.forEach((b) => b.classList.toggle('is-hot', Number(b.dataset.channel) === (t && t.kind === 'arcade' ? ARCADE : hovered)));
   });
   el.addEventListener('pointerup', (e) => {
+    if (lever) { lever = null; return; }
     const wasDrag = drag && drag.moved;
     drag = null;
     if (wasDrag) return;
     const t = target(e);
-    if (t && t.kind === 'monitor') { sound('zap'); open(t.i, chButtons[t.i]); }
+    if (t && t.kind === 'monitor') { sound('zap'); open(t.i, chButton(t.i)); }
+    else if (t && t.kind === 'arcade') { sound('zap'); open(ARCADE, chButton(ARCADE)); }
     else if (t && t.kind === 'about') { sound('zap'); open(ABOUT, pilotButtons[0]); }
+    else if (t && t.kind === 'tape') { sound('zap'); open(DECK, tapeButtons[0]); }
     else if (t && t.kind === 'door') goCockpit();
     else if (t && t.kind === 'dog') { sound('buzz'); world.pokeDog(); }
     else if (focused >= 0) close();
@@ -539,7 +618,9 @@ function buildScene() {
     hovered = -1;
     hotKey = '';
     cockpit.setHot(false);
+    cockpit.setTapeHot(false);
     chButtons.forEach((b) => b.classList.remove('is-hot'));
+    arcade.setHot(false);
   });
 
   /* ---------- Loop ---------- */
@@ -553,6 +634,8 @@ function buildScene() {
   let lastScreens = 0;
   let lastT = 0;
   let nextBeep = 3000;
+  const lensPos = new THREE.Vector3();
+  tape.onChange((on) => cockpit.setPlaying(on));
 
   const frame = (t) => {
     requestAnimationFrame(frame);   // schedule first, so one bad frame can never stop the loop
@@ -562,6 +645,7 @@ function buildScene() {
     const dt = THREE.MathUtils.clamp((t - lastT) / 1000, 0, 0.1);
     lastT = t;
     world.update(t, dt);
+    arcade.update(t);
     hyper.update(t, dt);
     cockpit.update(t, dt);
 
@@ -624,6 +708,7 @@ function buildScene() {
     if (t - lastScreens > (motion() ? 66 : 1000)) {
       monitors.forEach((m, i) => drawScreen(m, i, t));
       world.redraw(t);
+      arcade.redraw(t);
       cockpit.redraw(t);
       lastScreens = t;
     }
@@ -632,6 +717,15 @@ function buildScene() {
     if (deck === 'cockpit' && motion()) {
       nextBeep -= dt * 1000;
       if (nextBeep <= 0) { sound('beep'); nextBeep = 2500 + Math.random() * 4500; }
+    }
+
+    // The holo beam follows the deck's lens on screen
+    if (!holo.hidden) {
+      const r = el.getBoundingClientRect();
+      const toScreen = (o) => { o.getWorldPosition(lensPos); lensPos.project(camera); return [r.left + (lensPos.x + 1) / 2 * r.width, r.top + (1 - lensPos.y) / 2 * r.height]; };
+      const [tx, ty] = toScreen(cockpit.tapeTop);
+      const [lx, ly] = toScreen(cockpit.tapeLens);
+      tape.beam(lx, ly, tx, Math.min(ty, ly));
     }
 
     renderer.render(scene, camera);
@@ -643,6 +737,7 @@ function buildScene() {
   el.style.cursor = 'grab';
 
   return {
+    setThrust(k) { hyper.setThrust(k); cockpit.setThrust(k); },
     focus(i, done) {
       focused = i;
       head.yaw = head.pitch = head.yawGoal = head.pitchGoal = 0;   // the fly-in starts from the turned view
