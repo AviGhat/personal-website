@@ -21,11 +21,11 @@
 
   <script>
     // Flag JS early so reveal styles never hide content when scripts fail,
-    // and settle motion before first paint: a stored choice beats the OS setting.
+    // and settle motion before first paint: FX is on unless the visitor turned it off.
     (function () {
       var root = document.documentElement, pref = null;
       try { pref = localStorage.getItem('ag-motion'); } catch (e) {}
-      var on = pref ? pref === 'on' : !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var on = pref ? pref !== 'off' : true;   // FX on by default; the switch turns it off
       root.classList.add('js', on ? 'fx-on' : 'fx-off');
     })();
   </script>
@@ -78,6 +78,7 @@
         <li><a href="#bounties">Bounties</a></li>
         <li><a href="#missions">Missions</a></li>
         <li><a href="#arsenal">Arsenal</a></li>
+        <li><a href="hobbies.html">Hobbies</a></li>
         <li><a href="index.html">Wanted</a></li>
         <li><a href="#transmit" class="bar__cta">Open channel</a></li>
       </ul>
@@ -103,6 +104,7 @@
         <li><a href="#missions"><span>S/03</span>Missions</a></li>
         <li><a href="#arsenal"><span>S/04</span>Arsenal</a></li>
         <li><a href="#transmit"><span>S/05</span>Transmit</a></li>
+        <li><a href="hobbies.html"><span>OFF</span>Hobbies</a></li>
         <li><a href="index.html"><span>HOME</span>Wanted</a></li>
       </ol>
     </nav>

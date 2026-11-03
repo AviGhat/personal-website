@@ -45,4 +45,17 @@ The site is a recovered bounty terminal from a 90s space-western ship. All token
 - Glare: the sun sits just past the upper edge of the Earth that's on screen. A starburst, an anamorphic streak and lens ghosts are drawn on `.space__glare` (screen blend), and the oceans get a specular glint.
 
 ## Motion
-Boot sequence (first visit per session), dot-matrix name that reacts to the pointer, staggered reveals, a scanline flicker, a rolling band, film grain. Everything except the static overlays is off under `prefers-reduced-motion`; grain and roll are off below 768px.
+Boot sequence (first visit per session), dot-matrix name that reacts to the pointer, staggered reveals, a scanline flicker, a rolling band, film grain. FX is on by default for everyone, whatever the OS motion setting (the owner's choice); the FX switch in the top bar turns all of it off and is remembered. Without JS, `prefers-reduced-motion` still disables animation.
+
+## Hobbies page (hobbies.html): the lounge
+- Three.js r160 from jsDelivr through an import map; everything in the scene is built in code (`js/hobbies.js`), with no model files. It's an original ship's lounge: yellow couches, a deck plate, stairs to a landing with an orange rail, a bulkhead door, a console bank, and warm strip light.
+- Four CRTs (pale teal-grey shell `--crt-shell`, faceted tube housing, slightly bulged glass). Each screen is a live canvas: music EQ bars (amber), esports radar (green), reading pages (cream), and a ball crossing a pitch (red; soccer then tennis).
+- Interaction: drag to look around, hover a monitor to buzz and light it, click or press a channel button to fly the camera in (1.1s) and open the `.tv` terminal. The terminal is translucent `--tv-glass` with scanlines and powers on like a tube. Esc, Close or a click on empty space flies back. On wide screens the monitor sits left with the terminal right; on phones the terminal docks at the bottom.
+- The hobby copy is real HTML (`.hobby` articles), so it's readable without WebGL (`.no-webgl` falls back to a plain list). Specifics still to fill are marked `.todo`.
+- Set dressing lives in `js/lounge-world.js`:
+  - Hull: metallic materials with RoomEnvironment reflections; a riveted viewport in the back wall with a real 3D Earth (turning surface and cloud layer, its own sun) and a starfield, plus a cool light shaft falling in through it.
+  - Floor: plates in two tones, grated side strips, hazard edging, and two woven rugs.
+  - Cozy props: a gaming corner (desk, two live screens, lit keyboard, PC tower, chair, headphones); a bed with a striped blanket and pillows; a coffee table with a steaming mug; a floor lamp, a hanging lantern and a bedside lamp; a wall terminal; a gig poster; a bulkhead door; cargo.
+  - A ceiling fan light: spinning blades, a soft additive light cone and a cool spotlight.
+  - The ship's corgi: original low-poly, lying beside food and water bowls. It breathes, wags, looks around and twitches its ears; a click makes it happy for a few seconds.
+- On phones the decorative point lights are skipped (the glowing bulbs carry the look) and shadows are off.

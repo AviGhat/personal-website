@@ -23,7 +23,7 @@
     (function () {
       var root = document.documentElement, pref = null;
       try { pref = localStorage.getItem('ag-motion'); } catch (e) {}
-      var on = pref ? pref === 'on' : !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var on = pref ? pref !== 'off' : true;   // FX on by default; the switch turns it off
       root.classList.add('js', on ? 'fx-on' : 'fx-off');
     })();
   </script>
@@ -99,6 +99,7 @@
           <li><a class="key" href="portfolio.html#bounties" data-key="P" aria-keyshortcuts="P"><span class="key__face"><span class="key__lamp"></span><span class="key__label">PROJECTS</span><kbd class="key__hot">P</kbd></span></a></li>
           <li><a class="key" href="portfolio.html#missions" data-key="E" aria-keyshortcuts="E"><span class="key__face"><span class="key__lamp"></span><span class="key__label">EXPERIENCE</span><kbd class="key__hot">E</kbd></span></a></li>
           <li><a class="key" href="portfolio.html#arsenal" data-key="S" aria-keyshortcuts="S"><span class="key__face"><span class="key__lamp"></span><span class="key__label">SKILLS</span><kbd class="key__hot">S</kbd></span></a></li>
+          <li><a class="key" href="hobbies.html" data-key="H" aria-keyshortcuts="H"><span class="key__face"><span class="key__lamp"></span><span class="key__label">HOBBIES</span><kbd class="key__hot">H</kbd></span></a></li>
           <li><a class="key key--hot" href="portfolio.html#transmit" data-key="C" aria-keyshortcuts="C"><span class="key__face"><span class="key__lamp"></span><span class="key__label">CONTACT</span><kbd class="key__hot">C</kbd></span></a></li>
         </ul>
       </nav>

@@ -372,4 +372,7 @@
   }
 
   panel();
+
+  // Other scripts (the 3D lounge) can borrow the effects
+  window.agSound = { buzz, zap };
 })();
