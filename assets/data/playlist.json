@@ -1,0 +1,602 @@
+{
+ "name": "It Just is...",
+ "owner": "Avi",
+ "url": "https://open.spotify.com/playlist/1AdTlkC6OvYTXPi8FWJr33",
+ "uri": "spotify:playlist:1AdTlkC6OvYTXPi8FWJr33",
+ "tracks": [
+  {
+   "uri": "spotify:track:6SNGzhVrisdq63Ndz58ovT",
+   "title": "Luv (sic)",
+   "artist": "Nujabes",
+   "ms": 286320
+  },
+  {
+   "uri": "spotify:track:2ej1A2Ze6P2EOW7KfIosZR",
+   "title": "Feather (feat. Cise Starr & Akin from CYNE)",
+   "artist": "Nujabes, Cise Starr & Akin from CYNE",
+   "ms": 175360
+  },
+  {
+   "uri": "spotify:track:0JL9TZip7mL7iwC5EOkALS",
+   "title": "Lady Brown (feat. Cise Starr from CYNE)",
+   "artist": "Nujabes, Cise Starr",
+   "ms": 199160
+  },
+  {
+   "uri": "spotify:track:76iLrxwkfFZfxG4vrCYNAs",
+   "title": "Aruarian Dance",
+   "artist": "Ginchy",
+   "ms": 169991
+  },
+  {
+   "uri": "spotify:track:2kZmQxngXuj32GjdAZf4Bf",
+   "title": "Shiki No Uta",
+   "artist": "Nujabes",
+   "ms": 301950
+  },
+  {
+   "uri": "spotify:track:4pVwc3fU2RqL7l7L0fSwaq",
+   "title": "Peaceland",
+   "artist": "Nujabes",
+   "ms": 499120
+  },
+  {
+   "uri": "spotify:track:6eGMwVVABqVTe9bWRIm498",
+   "title": "reflection eternal",
+   "artist": "Nujabes",
+   "ms": 257893
+  },
+  {
+   "uri": "spotify:track:4xlpJ99yL9xYQtzG6c3hwk",
+   "title": "Luv(sic.) pt3 (feat. Shing02)",
+   "artist": "Nujabes, Shing02",
+   "ms": 336866
+  },
+  {
+   "uri": "spotify:track:0d5OqgwdmMGaJbQOkWWwHI",
+   "title": "Windspeaks",
+   "artist": "Uyama Hiroto",
+   "ms": 269386
+  },
+  {
+   "uri": "spotify:track:7KMm1zF2QOTSw2t01IAFif",
+   "title": "Counting Stars",
+   "artist": "Nujabes",
+   "ms": 247613
+  },
+  {
+   "uri": "spotify:track:0nSaufHvtNJHP2GSsswtQ4",
+   "title": "Copycats",
+   "artist": "Marcus D, Shing02",
+   "ms": 179031
+  },
+  {
+   "uri": "spotify:track:6QQasFd8xESKxo4K9F0Sdo",
+   "title": "Parallel Universe",
+   "artist": "Marcus D, Shing02",
+   "ms": 279690
+  },
+  {
+   "uri": "spotify:track:1pfMLP1qiIj0mvfBB9kYQj",
+   "title": "Exxon Mobil",
+   "artist": "Marcus D, Shing02",
+   "ms": 228982
+  },
+  {
+   "uri": "spotify:track:5lsbb0P50rVBn91T8YfSZl",
+   "title": "CREED",
+   "artist": "Shing02, Jack The Rip",
+   "ms": 219484
+  },
+  {
+   "uri": "spotify:track:2TxObAx1YEVh4SKI1efmt8",
+   "title": "Atonement",
+   "artist": "Marcus D, Prometheus Brown, Vitamin-D",
+   "ms": 232373
+  },
+  {
+   "uri": "spotify:track:2Ji3LyMWiHJdiaf3CNvHny",
+   "title": "Live Better",
+   "artist": "Marcus D, Saigon, Choklate",
+   "ms": 225013
+  },
+  {
+   "uri": "spotify:track:5mW93LXSilirl8Aiqy2jWX",
+   "title": "Best in Show",
+   "artist": "Marcus D, Skyzoo, Larue",
+   "ms": 220160
+  },
+  {
+   "uri": "spotify:track:5KXF4i4InvcMWXrPIBkojy",
+   "title": "Hall of Kings",
+   "artist": "Marcus D, La",
+   "ms": 237120
+  },
+  {
+   "uri": "spotify:track:2XiuEP75Grhtt5kXOK6PiT",
+   "title": "Greater Purpose",
+   "artist": "Marcus D, Cise Star",
+   "ms": 255789
+  },
+  {
+   "uri": "spotify:track:2uhEhXf9yYz15DZdB9cpYe",
+   "title": "Forgotten",
+   "artist": "Marcus D, Jinsang",
+   "ms": 140133
+  },
+  {
+   "uri": "spotify:track:2nfAMEk4Do1eVE1gs5Y246",
+   "title": "Elevator - Remastered",
+   "artist": "Marcus D",
+   "ms": 207291
+  },
+  {
+   "uri": "spotify:track:3Ws1jJhC7ifcNZ1MCxdj3X",
+   "title": "Dionysus",
+   "artist": "Marcus D, Cise Star",
+   "ms": 203375
+  },
+  {
+   "uri": "spotify:track:3LRSObGjzr71YEFq0MnfLq",
+   "title": "Ayahuasca (The Lone Wolf)",
+   "artist": "Marcus D, Nitsua",
+   "ms": 256342
+  },
+  {
+   "uri": "spotify:track:4zzIfRionarRB7bbhmAWY1",
+   "title": "Earth Angel",
+   "artist": "Marcus D, Cise Star",
+   "ms": 256751
+  },
+  {
+   "uri": "spotify:track:5EmhxHzjQbywIgWBoIysR3",
+   "title": "Dreamland",
+   "artist": "14?, Cise Star, Fayya",
+   "ms": 268892
+  },
+  {
+   "uri": "spotify:track:0jkaVZIYepDPnB140eR1Uc",
+   "title": "Spiritual State (feat. Uyama Hiroto)",
+   "artist": "Nujabes, Uyama Hiroto",
+   "ms": 391893
+  },
+  {
+   "uri": "spotify:track:3K0vUiZNaeJTLDK4GUicl9",
+   "title": "Waiting For The Clouds (feat. Substantial)",
+   "artist": "Nujabes, Substantial",
+   "ms": 232306
+  },
+  {
+   "uri": "spotify:track:0GR0uFHhHoOA9mYToXhZ42",
+   "title": "Rainyway Back Home",
+   "artist": "Nujabes",
+   "ms": 156480
+  },
+  {
+   "uri": "spotify:track:43pWChQ7AOab9wlSGy0dN6",
+   "title": "F.I.L.O. (feat. Shing02)",
+   "artist": "Nujabes, Shing02",
+   "ms": 211226
+  },
+  {
+   "uri": "spotify:track:11UmnGa3b80WRBE9b2E7ki",
+   "title": "Highs To Lows -remix (street) [12inch Ver.]",
+   "artist": "Nujabes, Cise Starr from CYNE",
+   "ms": 251039
+  },
+  {
+   "uri": "spotify:track:26qaiAmkELbplFdT9jQu2h",
+   "title": "F.I.L.O (12inch Ver.)",
+   "artist": "Nujabes, Shing02",
+   "ms": 214084
+  },
+  {
+   "uri": "spotify:track:2aFye87RZsU4JCTpufsDSD",
+   "title": "Luv (sic) pt3 Ta-ku Remix",
+   "artist": "Nujabes, Ta-ku",
+   "ms": 296146
+  },
+  {
+   "uri": "spotify:track:72LSGNDLY4sdvyrGIKtd2Q",
+   "title": "Luv (sic) Grand Finale (feat. Shing02)",
+   "artist": "Nujabes, Shing02",
+   "ms": 316760
+  },
+  {
+   "uri": "spotify:track:7FY4KAi2JIoPLxNPLdmnAY",
+   "title": "Luv (sic) pt5 (feat. Shing02)",
+   "artist": "Nujabes, Shing02",
+   "ms": 349786
+  },
+  {
+   "uri": "spotify:track:04TTiTi7iJFjcDl5Kfciib",
+   "title": "By The Sea",
+   "artist": "Gowe",
+   "ms": 215000
+  },
+  {
+   "uri": "spotify:track:1zucHJN4WKHIzSL4FyiJw9",
+   "title": "Innermission",
+   "artist": "Logic, Lucy Rose",
+   "ms": 240053
+  },
+  {
+   "uri": "spotify:track:5FhaG2uuOPmPcGXO9aniCH",
+   "title": "The Incredible True Story",
+   "artist": "Logic",
+   "ms": 416693
+  },
+  {
+   "uri": "spotify:track:3tUl3J5yq29oOkZdabNlK7",
+   "title": "Soul Of Freedom feat. Cise Starr",
+   "artist": "Uyama Hiroto, Cise Starr",
+   "ms": 302333
+  },
+  {
+   "uri": "spotify:track:1QnGT6xHffXZYOiej9oAO2",
+   "title": "Vision Eyes (feat. Golden Boy)",
+   "artist": "Uyama Hiroto, Golden Boy",
+   "ms": 243906
+  },
+  {
+   "uri": "spotify:track:703CqPZru6xuos8jYvD6R0",
+   "title": "Mature Opinion - Illuminus Remix",
+   "artist": "Kenichiro Nishihara, Daichi Diez",
+   "ms": 283640
+  },
+  {
+   "uri": "spotify:track:1VLdR9j5zUYDpmY7Bdl3YD",
+   "title": "愛密集",
+   "artist": "Yakkle, Shing02",
+   "ms": 204615
+  },
+  {
+   "uri": "spotify:track:574IBnzValA7TFIiOHNfPT",
+   "title": "Next to Nothing",
+   "artist": "SoulChef, KnowaKing",
+   "ms": 196620
+  },
+  {
+   "uri": "spotify:track:54tP7fhHUq3Y7JsWofn9TH",
+   "title": "Luv (sic) pt2 Acoustica",
+   "artist": "Nujabes",
+   "ms": 393506
+  },
+  {
+   "uri": "spotify:track:4x7z7PwjRpbtFNKXihsHRr",
+   "title": "Perfect Circle",
+   "artist": "Nujabes",
+   "ms": 240666
+  },
+  {
+   "uri": "spotify:track:0fbnqrpTlUdy0PUwMdU8Pl",
+   "title": "City Lights (feat. Pase Rock & Substantial)",
+   "artist": "Nujabes, Pase Rock, Substantial",
+   "ms": 194293
+  },
+  {
+   "uri": "spotify:track:6km64jEsP6HYAtTjzUyAJX",
+   "title": "Yin And Yang",
+   "artist": "Uyama Hiroto",
+   "ms": 191533
+  },
+  {
+   "uri": "spotify:track:7I4qogLBan8KmASM2xJU8r",
+   "title": "Relax Your Mind feat. Pase Rock",
+   "artist": "Uyama Hiroto, Pase Rock",
+   "ms": 278080
+  },
+  {
+   "uri": "spotify:track:3GUqoL8LDEpw2GH6G9onE0",
+   "title": "Kumomi",
+   "artist": "Nujabes",
+   "ms": 233626
+  },
+  {
+   "uri": "spotify:track:3vEAOJD6HXhKiEq6ALYFVd",
+   "title": "Sky is Tumbling (feat. Cise Star)",
+   "artist": "Nujabes, Cise Star",
+   "ms": 269360
+  },
+  {
+   "uri": "spotify:track:69jGxyfw3lzGGYf78jdkpF",
+   "title": "flowers",
+   "artist": "Nujabes",
+   "ms": 239666
+  },
+  {
+   "uri": "spotify:track:7BHm5w1Iclonuyn2TQ7lQw",
+   "title": "Power of Self",
+   "artist": "Kenichiro Nishihara, Substantial",
+   "ms": 189893
+  },
+  {
+   "uri": "spotify:track:58yuFWA2sd63pW9i4Jy7fC",
+   "title": "Who's Theme",
+   "artist": "MINMI",
+   "ms": 297327
+  },
+  {
+   "uri": "spotify:track:2rnAYh7REAMGYqJUXJKZZK",
+   "title": "Horn in the middle",
+   "artist": "Nujabes",
+   "ms": 248600
+  },
+  {
+   "uri": "spotify:track:7ndsOhKgqKXKeJQipuA3qN",
+   "title": "Night on the Town",
+   "artist": "Marcus D, Cise Star, Substantial, Funky DL",
+   "ms": 281693
+  },
+  {
+   "uri": "spotify:track:6HdAw1lbXOaLNQw18s6yds",
+   "title": "Prayer",
+   "artist": "Nujabes",
+   "ms": 209266
+  },
+  {
+   "uri": "spotify:track:13rKPQ0MaFSIJeBzFsNrgU",
+   "title": "the sun (feat. Cise Starr)",
+   "artist": "haruka nakamura, Cise Starr",
+   "ms": 274133
+  },
+  {
+   "uri": "spotify:track:1HMtl6inpHowSjJn0CfB4m",
+   "title": "Sea of Dreams",
+   "artist": "Nitsua, Apollo Bebop, Grover, Brian to Earth",
+   "ms": 328946
+  },
+  {
+   "uri": "spotify:track:7mEPuj0XW6eK14Unu6IUc1",
+   "title": "Eclipse (feat. Substantial)",
+   "artist": "Nujabes, Substantial",
+   "ms": 214333
+  },
+  {
+   "uri": "spotify:track:4lD90LPUMiJIHPRZQ1l2I3",
+   "title": "Winter Lane (Nujabes Remix)",
+   "artist": "DSK, Nujabes",
+   "ms": 311826
+  },
+  {
+   "uri": "spotify:track:3NqzS5b75YbP8doCUnLT4V",
+   "title": "Spike Spiegel",
+   "artist": "Saib",
+   "ms": 216398
+  },
+  {
+   "uri": "spotify:track:24ApZRjjXJ3mPeqz5e3zyJ",
+   "title": "Don't Hold Ya Breath",
+   "artist": "Marcus D, Funky DL",
+   "ms": 263120
+  },
+  {
+   "uri": "spotify:track:6bPDBreoqj6uRqbfejuURe",
+   "title": "South Side feat. Shing02",
+   "artist": "Uyama Hiroto, Shing02",
+   "ms": 284880
+  },
+  {
+   "uri": "spotify:track:3MZHDutJalh9C4DNLptn2v",
+   "title": "The Final View",
+   "artist": "Nujabes",
+   "ms": 214946
+  },
+  {
+   "uri": "spotify:track:6pUjl3qNOXV9fbVIFQWtG3",
+   "title": "waves",
+   "artist": "Kenichiro Nishihara, Substantial",
+   "ms": 259519
+  },
+  {
+   "uri": "spotify:track:1xsRIK4wyeLkRN2AHJY4pY",
+   "title": "Hikari (feat. Substantial)",
+   "artist": "Nujabes, Substantial",
+   "ms": 260440
+  },
+  {
+   "uri": "spotify:track:0rKR7VLBxqVQAz2UEe3D8N",
+   "title": "Think Different (feat. Substantial)",
+   "artist": "Nujabes, Substantial",
+   "ms": 197293
+  },
+  {
+   "uri": "spotify:track:5gNID1xaU7CxVhFwUjzcVx",
+   "title": "Solanine",
+   "artist": "Rav",
+   "ms": 155552
+  },
+  {
+   "uri": "spotify:track:1uPCr8mi8pzL9NLRrJ3XPP",
+   "title": "SkyIs Falling (feat. C.L. Smooth)",
+   "artist": "Nujabes, C.L. Smooth",
+   "ms": 281026
+  },
+  {
+   "uri": "spotify:track:6b6D94SnWcbNYYcw7ky7YL",
+   "title": "my leaving",
+   "artist": "Kenichiro Nishihara, mabanua",
+   "ms": 236506
+  },
+  {
+   "uri": "spotify:track:3yKLskgaU2py5ET4OBDQmg",
+   "title": "Highs 2 Lows (feat. Cise Starr from CYNE)",
+   "artist": "Nujabes, Cise Starr",
+   "ms": 277960
+  },
+  {
+   "uri": "spotify:track:2awGHRqmMKAMmpopRlPQFC",
+   "title": "soar (feat. Substantial)",
+   "artist": "haruka nakamura, サブスタンシャル",
+   "ms": 277066
+  },
+  {
+   "uri": "spotify:track:58MeeOMk6PMQxXWY9YCNPD",
+   "title": "Next Levels",
+   "artist": "King Geedorah, John Robinson, Stahhr, Stacy Epps, Invizible Handz",
+   "ms": 229320
+  },
+  {
+   "uri": "spotify:track:7sP146pj68A6y0Fmrsua4E",
+   "title": "Then",
+   "artist": "fat jon",
+   "ms": 74838
+  },
+  {
+   "uri": "spotify:track:0Q1nTiEPnoQSqM0qrY9TMY",
+   "title": "Still Talking to You",
+   "artist": "Nujabes",
+   "ms": 205373
+  },
+  {
+   "uri": "spotify:track:1R8DL1a9aFYdOzhv6sYjV1",
+   "title": "81Summer",
+   "artist": "Uyama Hiroto",
+   "ms": 242280
+  },
+  {
+   "uri": "spotify:track:109LuQrdUTz3OOT70NjZ1X",
+   "title": "Faye Valentine",
+   "artist": "Saib",
+   "ms": 229302
+  },
+  {
+   "uri": "spotify:track:2HBCPn9IfbISDnQUpFuvqf",
+   "title": "Julia",
+   "artist": "Saib",
+   "ms": 173348
+  },
+  {
+   "uri": "spotify:track:4z3Z26tVNNuGrvQSbd7naG",
+   "title": "Jet Black",
+   "artist": "Saib",
+   "ms": 235964
+  },
+  {
+   "uri": "spotify:track:7GFHyQxq88T81z7CaHgeYq",
+   "title": "Cosmos",
+   "artist": "Saib",
+   "ms": 323082
+  },
+  {
+   "uri": "spotify:track:0nsn0xuYHUTbq47O7SBV5v",
+   "title": "san francisco",
+   "artist": "MIDICRONICA",
+   "ms": 206733
+  },
+  {
+   "uri": "spotify:track:5tO3pr49SdxO05TNlYHfHT",
+   "title": "Beat laments the world",
+   "artist": "Nujabes",
+   "ms": 263373
+  },
+  {
+   "uri": "spotify:track:7oduWc5UMHjyRxrLf2JpGV",
+   "title": "It's about time -fat jon remix",
+   "artist": "Pase Rock, fat jon",
+   "ms": 284333
+  },
+  {
+   "uri": "spotify:track:10SipHdWEubpHUuN2znzqu",
+   "title": "Sol (feat. Cise Star)",
+   "artist": "re:plus, Cise Star",
+   "ms": 209320
+  },
+  {
+   "uri": "spotify:track:1L6vtkHvjKWBIym93FmSPP",
+   "title": "Smooth",
+   "artist": "Saib",
+   "ms": 122252
+  },
+  {
+   "uri": "spotify:track:7g0sWXrygkH9Jix9xoQ1Mf",
+   "title": "Back to It",
+   "artist": "your best friend jippy",
+   "ms": 60745
+  },
+  {
+   "uri": "spotify:track:32nzvcvGlAfbo4ysCsUoYv",
+   "title": "Reminisce.",
+   "artist": "Jinsang",
+   "ms": 79216
+  },
+  {
+   "uri": "spotify:track:67c5M9gVWemCV5SGH5cc4v",
+   "title": "Don't Cry",
+   "artist": "J Dilla",
+   "ms": 119386
+  },
+  {
+   "uri": "spotify:track:2rUaktaAxshyPzIdAKzk1Y",
+   "title": "Light on the land",
+   "artist": "Nujabes",
+   "ms": 235000
+  },
+  {
+   "uri": "spotify:track:3Jm2v7blDxyqiUACWeGcH9",
+   "title": "Geishas In The Days (feat. Pismo)",
+   "artist": "Nomak, Pismo",
+   "ms": 230600
+  },
+  {
+   "uri": "spotify:track:6350Cp9yZogJcgR7TwDLAQ",
+   "title": "Champ Magnétique",
+   "artist": "Yakkle, Shing02",
+   "ms": 243428
+  },
+  {
+   "uri": "spotify:track:0Gm0B1ECaxsOVdLVIKtj5R",
+   "title": "Elemental Music (feat. Melodee)",
+   "artist": "Nomak, Melodee",
+   "ms": 258266
+  },
+  {
+   "uri": "spotify:track:5mEktxj3u61Q9tM5ZfPuMP",
+   "title": "The Stars My Destination",
+   "artist": "PENPALS, EMERLD, Velise",
+   "ms": 180290
+  },
+  {
+   "uri": "spotify:track:3YP2ObqLv6QjoSJun1J8Hk",
+   "title": "Spektrum feat. Fat Jon",
+   "artist": "Uyama Hiroto, fat jon",
+   "ms": 248946
+  },
+  {
+   "uri": "spotify:track:16wGHOPaWoat5rkAZkixxk",
+   "title": "Luv (sic) pt6 Uyama Hiroto Remix",
+   "artist": "Nujabes, Uyama Hiroto",
+   "ms": 278786
+  },
+  {
+   "uri": "spotify:track:4MbUcaX58NkUmKXe6FuBaV",
+   "title": "Blessing It -remix (feat. Substantial & Pase Rock from Five Deez)",
+   "artist": "Nujabes, Substantial, Pase Rock",
+   "ms": 203706
+  },
+  {
+   "uri": "spotify:track:6fzsRmsi50Wa6snAArkfkf",
+   "title": "Another Reflection",
+   "artist": "Nujabes",
+   "ms": 224186
+  },
+  {
+   "uri": "spotify:track:4rAcMik7N6LlIs61u5bzYo",
+   "title": "sea of cloud",
+   "artist": "Nujabes",
+   "ms": 181773
+  },
+  {
+   "uri": "spotify:track:7L4AtavGZEEDkVw1E0mDYn",
+   "title": "Three Man Weave",
+   "artist": "Injury Reserve",
+   "ms": 206693
+  },
+  {
+   "uri": "spotify:track:2XaW5xe9iGD6cypnNvoWke",
+   "title": "Yes (feat. Pase Rock)",
+   "artist": "Nujabes, Pase Rock",
+   "ms": 471000
+  }
+ ]
+}

@@ -84,11 +84,11 @@
 
     <header class="lounge__intro lounge__intro--lounge">
       <h1 class="lounge__title">Off duty</h1>
-      <p class="lounge__lede">The lounge. Four monitors, four channels, everything I do when the pipelines are quiet. Click a monitor to tune in, or take the stairs to the cockpit.</p>
+      <p class="lounge__lede">The lounge. Four monitors, four channels, everything I do when the pipelines are quiet. Click a monitor to tune in, put a coin in the arcade, or take the stairs to the cockpit.</p>
     </header>
     <div class="lounge__intro lounge__intro--cockpit">
       <p class="lounge__title" aria-hidden="true">The bridge</p>
-      <p class="lounge__lede">Pilot's seat, hyperdrive engaged, Earth below. Drag to look around; the monitor on the console has the pilot file.</p>
+      <p class="lounge__lede">Pilot's seat, hyperdrive engaged, Earth below. Drag to look around. Pull the throttle down to speed up. The monitor has the pilot file; the tape deck plays my playlist.</p>
     </div>
 
     <nav class="channels-bar" id="channels" aria-label="Hobby channels">
@@ -97,6 +97,7 @@
         <li><button class="ch" type="button" data-channel="1" aria-controls="hobby-esports"><span class="ch__no">CH 02</span>Esports</button></li>
         <li><button class="ch" type="button" data-channel="2" aria-controls="hobby-reading"><span class="ch__no">CH 03</span>Reading</button></li>
         <li><button class="ch" type="button" data-channel="3" aria-controls="hobby-sports"><span class="ch__no">CH 04</span>Sports</button></li>
+        <li><button class="ch" type="button" data-channel="6" aria-controls="arcade"><span class="ch__no">CH 05</span>Arcade</button></li>
         <li><button class="ch ch--deck" type="button" data-deck="cockpit"><span class="ch__no">Up the stairs</span>Cockpit</button></li>
       </ul>
     </nav>
@@ -104,6 +105,8 @@
     <nav class="channels-bar bridge-bar" aria-label="Cockpit controls">
       <ul>
         <li><button class="ch" type="button" data-pilot aria-controls="about-pilot"><span class="ch__no">Pilot file</span>About me</button></li>
+        <li><button class="ch" type="button" data-tape aria-controls="holo"><span class="ch__no">Tape deck</span>Music</button></li>
+        <li><label class="thrust"><span class="thrust__label">Throttle <output data-thrust-num>30%</output></span><input class="snd__range thrust__range" type="range" min="0" max="100" step="1" value="30" data-thrust aria-label="Thrust"></label></li>
         <li><button class="ch ch--deck" type="button" data-deck="lounge"><span class="ch__no">Down the stairs</span>Lounge</button></li>
       </ul>
     </nav>
@@ -188,7 +191,70 @@
       </article>
     </div>
 
-    <p class="lounge__hint" data-hint aria-hidden="true">Drag to look around. Click a monitor, or the door up the stairs.</p>
+    <!-- The arcade cabinet's game, played over the cabinet once the camera arrives -->
+    <section class="cab" id="arcade" data-cab tabindex="-1" aria-labelledby="cab-title" hidden>
+      <div class="cab__head">
+        <p class="cab__signal"><span class="lamp" aria-hidden="true"></span><span id="cab-title">Cab 01 / Dock 9 Brawl</span></p>
+        <button class="tv__btn" type="button" data-cab-close>Close <kbd>Esc</kbd></button>
+      </div>
+      <div class="cab__screen">
+        <canvas data-cab-canvas width="320" height="180" role="img" aria-label="Dock 9 Brawl: an original two-fighter brawler against the computer. Controls are listed below the screen."></canvas>
+      </div>
+      <div class="cab__pad" aria-label="Touch controls">
+        <div class="cab__dpad">
+          <button class="cab__b cab__b--up" type="button" data-pad="up" aria-label="Jump">&#9650;</button>
+          <button class="cab__b cab__b--left" type="button" data-pad="left" aria-label="Left">&#9664;</button>
+          <button class="cab__b cab__b--down" type="button" data-pad="down" aria-label="Crouch">&#9660;</button>
+          <button class="cab__b cab__b--right" type="button" data-pad="right" aria-label="Right">&#9654;</button>
+        </div>
+        <div class="cab__acts">
+          <button class="cab__b cab__b--act" type="button" data-pad="punch">P</button>
+          <button class="cab__b cab__b--act" type="button" data-pad="kick">K</button>
+          <button class="cab__b cab__b--act cab__b--sp" type="button" data-pad="special">SP</button>
+          <button class="cab__b cab__b--start" type="button" data-pad="start">Start</button>
+        </div>
+      </div>
+      <dl class="cab__keys">
+        <div><dt>Move</dt><dd><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd></dd></div>
+        <div><dt>Jump / crouch</dt><dd><kbd>&uarr;</kbd><kbd>&darr;</kbd> or <kbd>W</kbd><kbd>S</kbd></dd></div>
+        <div><dt>Block</dt><dd>Hold away. Crouch for low kicks.</dd></div>
+        <div><dt>Punch / kick</dt><dd><kbd>J</kbd> <kbd>K</kbd></dd></div>
+        <div><dt>Special</dt><dd><kbd>L</kbd></dd></div>
+        <div><dt>Start</dt><dd><kbd>Enter</kbd></dd></div>
+      </dl>
+    </section>
+
+    <!-- The tape deck's holographic player: our controls, Spotify's embed underneath -->
+    <svg class="holo-beam" data-holo-beam hidden aria-hidden="true"><polygon points="0,0"/><line/><line/><line/><line/><line/></svg>
+    <section class="holo" id="holo" data-holo tabindex="-1" aria-labelledby="holo-title" hidden>
+      <div class="holo__head">
+        <p class="holo__signal"><span class="holo__lamp" aria-hidden="true"></span>Deck 01 / Holo feed</p>
+        <button class="holo__btn" type="button" data-holo-close>Close <kbd>Esc</kbd></button>
+      </div>
+      <div class="holo__body">
+        <p class="holo__tape">Side A / It Just is... <span>Mixed by Avi</span></p>
+        <p class="holo__no" data-holo-no>TRK -- / --</p>
+        <h2 class="holo__title" id="holo-title" data-holo-title aria-live="polite">Loading tape</h2>
+        <p class="holo__artist" data-holo-artist>&nbsp;</p>
+        <div class="holo__time">
+          <span data-holo-pos>0:00</span>
+          <div class="holo__bar" data-holo-bar role="progressbar" aria-label="Track progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span data-holo-fill></span></div>
+          <span data-holo-dur>0:00</span>
+        </div>
+        <div class="holo__keys">
+          <button class="holo__key" type="button" data-holo-prev aria-label="Previous track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h2.5v14H5zM20 5v14L8.5 12z"/></svg></button>
+          <button class="holo__key holo__key--play" type="button" data-holo-play aria-label="Play"><svg class="holo__i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4v16l14-8z"/></svg><svg class="holo__i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg></button>
+          <button class="holo__key" type="button" data-holo-next aria-label="Next track"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 5H19v14h-2.5zM4 5v14l11.5-7z"/></svg></button>
+          <button class="holo__key holo__key--text" type="button" data-holo-shuffle aria-pressed="false">Shuf</button>
+        </div>
+        <p class="holo__label">Up next</p>
+        <ol class="holo__queue" data-holo-queue></ol>
+        <div class="holo__embed"><div data-holo-embed></div></div>
+        <p class="holo__note"><span data-holo-status>Full tracks if signed in to Spotify, else 30s previews.</span> <a href="https://open.spotify.com/playlist/1AdTlkC6OvYTXPi8FWJr33" target="_blank" rel="noopener">Open in Spotify</a></p>
+      </div>
+    </section>
+
+    <p class="lounge__hint" data-hint aria-hidden="true">Drag to look around. Click a monitor, the arcade, or the door up the stairs.</p>
   </main>
 </body>
 </html>

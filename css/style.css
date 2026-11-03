@@ -90,6 +90,24 @@
   --cockpit-trim:  #5E6976;
   --seat-pad:      #C9C2AE;
   --floor-light:   #6FC3FF;
+  /* Arcade cabinet: Dock 9 Brawl's fighters */
+  --fx-skin:       #C68A5C;
+  --fx-hair:       #1C1612;
+  --fx-boot:       #2A211B;
+  --fx-coat:       #4C5A4A;
+  --fx-denim:      #2F4C66;
+  --fx-steel:      #8C97A3;
+  --fx-brass:      #C2903F;
+  /* Tape deck hologram: dark teal glass, cyan line work */
+  --holo-glass:    rgb(4 24 24 / 0.82);
+  --holo-line:     rgb(63 242 220 / 0.6);
+  --holo-faint:    rgb(63 242 220 / 0.14);
+  --holo-scan:     rgb(63 242 220 / 0.06);
+  --holo-band:     rgb(63 242 220 / 0.07);
+  --holo-ink:      #D9FBF5;
+  --holo-dim:      #8CC9C0;
+  --holo-beam:     rgb(63 242 220 / 0.1);
+  --holo-split:    rgb(229 67 43 / 0.55);
 
   /* Type */
   --f-display: "Syncopate", "Michroma", "Arial Narrow", sans-serif;
@@ -1528,7 +1546,7 @@ html.fx-off { scroll-behavior: auto; }
 
 .lounge__intro {
   position: absolute; z-index: 2;
-  bottom: calc(var(--s-3) + 76px); left: var(--gutter);
+  bottom: calc(var(--s-3) + var(--chbar, 60px) + 16px); left: var(--gutter);
   max-width: min(30rem, calc(100% - 2 * var(--gutter)));
   pointer-events: none;
 }
@@ -1626,7 +1644,7 @@ html.fx-off { scroll-behavior: auto; }
 /* Phones: the terminal docks to the bottom, the monitor stays visible above it */
 @media (max-width: 767px), (max-aspect-ratio: 1/1) {
   .tv {
-    top: auto; bottom: calc(var(--s-3) + 60px); right: var(--gutter); left: var(--gutter);
+    top: auto; bottom: calc(var(--s-3) + var(--chbar, 60px)); right: var(--gutter); left: var(--gutter);
     width: auto; max-height: 52svh; translate: none;
   }
   .channels-bar ul { gap: 0.35rem; }
@@ -1662,8 +1680,16 @@ html.fx-off { scroll-behavior: auto; }
 .lounge[data-mode="transit"] .channels-bar { display: none; }
 .lounge.is-tuned .lounge__intro--cockpit { opacity: 0; }
 
-.channels-bar:not(.bridge-bar) ul { grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 58rem; }
-.bridge-bar ul { grid-template-columns: repeat(2, minmax(0, 14rem)); }
+.bridge-bar ul { grid-template-columns: repeat(4, minmax(0, 14rem)); }
+/* The throttle's slider twin in the bridge bar */
+.thrust {
+  display: flex; flex-direction: column; justify-content: center;
+  min-height: 52px; padding: 0.3rem 0.75rem 0;
+  background: var(--panel-veil); border: 1px solid var(--rule);
+}
+.thrust__label { display: flex; justify-content: space-between; gap: 0.5rem; font-family: var(--f-crt); font-size: 1.05rem; color: var(--amber); }
+.thrust__label output { color: var(--cream); }
+.thrust__range { height: 26px; }
 .ch--deck { border-color: var(--bebop-red); }
 .ch--deck .ch__no { color: var(--bebop-red); }
 
@@ -1679,3 +1705,228 @@ html.fx-off { scroll-behavior: auto; }
 /* In the cockpit the console fills the lower half: title goes over the side wall */
 .lounge__intro--cockpit { top: calc(var(--bar-h) + var(--s-3)); bottom: auto; }
 .lounge__hint { pointer-events: none; max-width: 22ch; text-align: right; line-height: 1.6; }
+
+/* ---------- Cockpit tape deck: the holographic player ---------- */
+
+.holo {
+  position: absolute; z-index: 3;
+  /* JS stands it straight above the deck's lens; this is the spot before it does */
+  left: max(var(--gutter), calc(50% - 11rem)); bottom: calc(var(--s-3) + 70px);
+  width: min(22rem, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100svh - var(--bar-h) - 2 * var(--s-3) - 70px);
+  display: flex; flex-direction: column;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, var(--holo-scan) 2px 3px),
+    var(--holo-glass);
+  border: 1px solid var(--holo-line);
+  color: var(--holo-ink);
+  outline: none;
+  overflow: hidden;
+}
+.holo[hidden] { display: none; }
+/* Corner brackets, like a projected frame */
+.holo::before {
+  content: ""; position: absolute; inset: 5px; pointer-events: none;
+  background:
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)) top left / 14px 2px no-repeat,
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)) top left / 2px 14px no-repeat,
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)) bottom right / 14px 2px no-repeat,
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)) bottom right / 2px 14px no-repeat;
+}
+/* A brighter interference band rolling down the projection */
+.holo::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 18%;
+  background: var(--holo-band); pointer-events: none;
+  translate: 0 -100%;
+}
+.fx-on .holo::after { animation: holo-band 4.8s linear infinite; }
+@keyframes holo-band { to { translate: 0 650%; } }
+.fx-on .holo.is-open { animation: holo-on 0.6s steps(6, end), holo-flicker 7s 0.6s steps(1, end) infinite; }
+/* Rises out of the beam: a sliver at the bottom edge widens, then climbs */
+@keyframes holo-on {
+  0% { clip-path: inset(99% 45% 0 45%); opacity: 0.4; }
+  30% { clip-path: inset(98% 0 0 0); opacity: 1; }
+  60% { clip-path: inset(40% 0 0 0); opacity: 0.7; }
+  100% { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+@keyframes holo-flicker {
+  0%, 100% { opacity: 1; transform: none; }
+  61% { opacity: 0.82; transform: translateX(2px); }
+  62% { opacity: 1; transform: none; }
+  88% { opacity: 0.9; }
+  89% { opacity: 1; }
+}
+
+.holo__head {
+  display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--holo-line);
+  font-size: var(--t-label); letter-spacing: 0.14em; text-transform: uppercase;
+}
+.holo__signal { display: flex; align-items: center; gap: 0.5rem; color: var(--neon-cyan); }
+.holo__lamp { width: 8px; height: 8px; background: var(--holo-dim); }
+.holo.is-playing .holo__lamp { background: var(--neon-cyan); }
+.fx-on .holo.is-playing .holo__lamp { animation: holo-blink 1s steps(1, end) infinite; }
+@keyframes holo-blink { 50% { opacity: 0.2; } }
+.holo__btn {
+  min-height: 44px; padding: 0 0.7rem;
+  background: none; border: 1px solid var(--holo-line); color: var(--holo-ink);
+  font-size: var(--t-label); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.holo__btn kbd { font-family: var(--f-crt); font-size: 0.95rem; margin-left: 0.3rem; color: var(--holo-dim); }
+.holo__btn:hover, .holo__btn:focus-visible { background: var(--neon-cyan); color: var(--space-black); }
+.holo__btn:hover kbd, .holo__btn:focus-visible kbd { color: var(--space-black); }
+
+.holo__body { padding: 0.7rem 0.9rem 0.4rem; overflow-y: auto; scrollbar-color: var(--holo-line) transparent; scrollbar-width: thin; }
+.holo__body > * { animation: tv-line 0.35s var(--ease-out) backwards; }
+.holo__body > :nth-child(2) { animation-delay: 0.3s; }
+.holo__body > :nth-child(3) { animation-delay: 0.36s; }
+.holo__body > :nth-child(n + 4) { animation-delay: 0.44s; }
+.holo__tape { display: flex; justify-content: space-between; gap: 1rem; font-family: var(--f-crt); font-size: 1.15rem; color: var(--neon-cyan); }
+.holo__tape span { color: var(--holo-dim); }
+.holo__no { margin-top: 0.4rem; font-family: var(--f-crt); font-size: 1rem; color: var(--holo-dim); }
+.holo__title {
+  margin-top: 0.15rem;
+  font-family: var(--f-display); font-weight: 700;
+  font-size: clamp(1.05rem, 0.9rem + 0.8vw, 1.35rem); line-height: 1.1; text-transform: uppercase;
+  text-shadow: -1.5px 0 var(--holo-split), 1.5px 0 var(--holo-line);
+  overflow-wrap: anywhere;
+}
+.holo__artist { margin-top: 0.3rem; font-size: var(--t-small); color: var(--holo-dim); }
+
+.holo__time { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.6rem; margin-top: 0.6rem; font-family: var(--f-crt); font-size: 1.05rem; }
+.holo__bar {
+  position: relative; height: 10px; cursor: pointer;
+  border: 1px solid var(--holo-line);
+}
+.holo__bar span {
+  position: absolute; inset: 1px; transform-origin: left; transform: scaleX(0);
+  background: repeating-linear-gradient(to right, var(--neon-cyan) 0 6px, transparent 6px 8px);
+  transition: transform 0.25s linear;
+}
+
+.holo__keys { display: grid; grid-template-columns: 1fr 1.4fr 1fr 1fr; gap: 0.4rem; margin-top: 0.6rem; }
+.holo__key {
+  display: grid; place-items: center; min-height: 44px;
+  background: var(--holo-faint); border: 1px solid var(--holo-line); color: var(--neon-cyan);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.holo__key svg { width: 20px; height: 20px; fill: currentColor; }
+.holo__key--text { font-family: var(--f-crt); font-size: 1.15rem; text-transform: uppercase; }
+.holo__key:hover, .holo__key:focus-visible, .holo__key[aria-pressed="true"] { background: var(--neon-cyan); color: var(--space-black); }
+.holo__key:focus-visible { outline: 2px solid var(--space-black); outline-offset: -6px; }
+.holo__key:active { translate: 0 2px; }
+.holo__key--play .holo__i-pause, .holo__key--play.is-playing .holo__i-play { display: none; }
+.holo__key--play.is-playing .holo__i-pause { display: block; }
+
+.holo__label { margin-top: 0.7rem; font-size: var(--t-label); letter-spacing: 0.16em; text-transform: uppercase; color: var(--holo-dim); }
+.holo__queue { margin-top: 0.35rem; border-top: 1px dashed var(--holo-line); }
+.holo__cue {
+  display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); column-gap: 0.4rem;
+  width: 100%; min-height: 44px; padding: 0.3rem 0.4rem; text-align: left;
+  background: none; border: 0; border-bottom: 1px dashed var(--holo-faint); color: var(--holo-ink);
+}
+.holo__cue-no { grid-row: span 2; align-self: center; font-family: var(--f-crt); font-size: 1.1rem; color: var(--holo-dim); }
+.holo__cue-title { font-size: var(--t-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.holo__cue-artist { font-size: 0.75rem; color: var(--holo-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.holo__cue:hover, .holo__cue:focus-visible { background: var(--neon-cyan); color: var(--space-black); }
+.holo__cue:hover span, .holo__cue:focus-visible span { color: var(--space-black); }
+
+.holo__embed { margin-top: 0.7rem; min-height: 80px; border: 1px solid var(--holo-faint); }
+.holo__embed iframe { display: block; border: 0; }
+.holo__note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 0.75rem; margin-top: 0.3rem; font-size: 0.75rem; line-height: 1.4; color: var(--holo-dim); }
+.holo__note a { display: inline-flex; align-items: center; min-height: 44px; color: var(--neon-cyan); text-transform: uppercase; letter-spacing: 0.12em; }
+.holo__note a:hover, .holo__note a:focus-visible { background: var(--neon-cyan); color: var(--space-black); }
+
+/* The projector beam from the deck's lens to the panel */
+.holo-beam { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+.holo-beam[hidden] { display: none; }
+.holo-beam polygon { fill: var(--holo-beam); }
+.holo-beam line { stroke: var(--holo-line); stroke-width: 1; stroke-dasharray: 2 5; opacity: 0.6; }
+
+@media (max-width: 767px), (max-aspect-ratio: 1/1) {
+  .bridge-bar ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.fx-off .holo.is-open, .fx-off .holo__body > * { animation: none; }
+.no-webgl .holo { position: static; translate: none; width: auto; max-height: none; margin-bottom: var(--s-3); }
+.no-webgl .holo-beam { display: none; }
+
+/* ---------- Lounge arcade cabinet: the game over the cabinet ---------- */
+
+.channels-bar:not(.bridge-bar) ul { grid-template-columns: repeat(6, minmax(0, 1fr)); max-width: 68rem; }
+
+.cab {
+  position: absolute; z-index: 3;
+  right: max(var(--gutter), 4vw); top: 50%;
+  width: min(42rem, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100svh - var(--bar-h) - 2 * var(--s-3));
+  translate: 0 -50%;
+  display: flex; flex-direction: column;
+  background: var(--tv-glass);
+  border: 1px solid var(--bebop-red);
+  outline: none;
+  overflow-y: auto;
+}
+.cab[hidden] { display: none; }
+.fx-on .cab:not([hidden]) { animation: tv-on 0.45s steps(4, end); }
+.cab__head {
+  display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--bebop-red);
+  font-size: var(--t-label); letter-spacing: 0.14em; text-transform: uppercase;
+}
+.cab__signal { display: flex; align-items: center; gap: 0.5rem; color: var(--bebop-red); }
+.cab__screen { position: relative; background: var(--space-black); border-bottom: 1px solid var(--rule); }
+.cab__screen canvas { display: block; width: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; }
+/* Tube scanlines over the game */
+.cab__screen::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, var(--screen-scan) 2px 3px);
+}
+
+.cab__keys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem 1rem; padding: 0.7rem 0.9rem 0.85rem; font-size: 0.8rem; }
+.cab__keys dt { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); }
+.cab__keys dd { color: var(--bone); }
+.cab__keys kbd {
+  display: inline-block; min-width: 1.5em; padding: 0 0.25em; margin-right: 0.15em;
+  border: 1px solid var(--rule); font-family: var(--f-crt); font-size: 1rem; line-height: 1.2; text-align: center; color: var(--amber);
+}
+
+/* Touch controls: a d-pad and four buttons, shown on touch screens instead of the key list */
+.cab__pad { display: none; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.6rem 0.75rem 0.75rem; touch-action: none; user-select: none; -webkit-user-select: none; }
+.cab__dpad { display: grid; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(2, 46px); gap: 4px; }
+.cab__b--up { grid-column: 2; grid-row: 1; }
+.cab__b--left { grid-column: 1; grid-row: 2; }
+.cab__b--down { grid-column: 2; grid-row: 2; }
+.cab__b--right { grid-column: 3; grid-row: 2; }
+.cab__acts { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: 50px 34px; gap: 6px; }
+.cab__b {
+  display: grid; place-items: center; min-width: 44px; min-height: 44px;
+  background: var(--soot); border: 1px solid var(--rule); color: var(--cream);
+  font-family: var(--f-crt); font-size: 1.2rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.cab__b--act { border-radius: 50%; border-color: var(--amber); color: var(--amber); }
+.cab__b--sp { border-color: var(--bebop-red); color: var(--bebop-red); }
+.cab__b--start { grid-column: 1 / -1; min-height: 34px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.cab__b.is-down, .cab__b:active { background: var(--amber); border-color: var(--amber); color: var(--space-black); }
+@media (pointer: coarse) {
+  .cab__pad { display: flex; }
+  .cab__keys { display: none; }
+}
+
+@media (max-width: 767px), (max-aspect-ratio: 1/1) {
+  .cab {
+    top: auto; bottom: calc(var(--s-3) + var(--chbar, 60px)); right: var(--gutter); left: var(--gutter);
+    width: auto; max-height: calc(100svh - var(--bar-h) - var(--chbar, 60px) - 2 * var(--s-3)); translate: none;
+  }
+  .cab__keys { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* Phones: the lounge's six channels stack in two rows; panels dock above them */
+@media (max-width: 767px) {
+  .channels-bar:not(.bridge-bar) ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lounge { --chbar: 116px; }
+  .lounge[data-mode="cockpit"] { --chbar: 116px; }
+}
+.fx-off .cab:not([hidden]) { animation: none; }
+.no-webgl .cab { position: static; translate: none; width: auto; max-height: none; margin-bottom: var(--s-3); }

@@ -192,6 +192,31 @@
     if (Math.random() < 0.5) tone('square', f * 1.25, f * 1.25, t + 0.11, 0.05, 0.015, 0.004);
   }
 
+  /* ---------- Arcade cabinet: fight sounds ---------- */
+
+  // kind: 'hit' (a landed blow), 'heavy', 'block', 'whiff', 'ko', 'blip' (menus)
+  function fx(kind) {
+    if (!enabled || !live()) return;
+    const t = ctx.currentTime;
+    if (kind === 'hit' || kind === 'heavy') {
+      const big = kind === 'heavy';
+      tone('sine', big ? 150 : 210, 50, t, big ? 0.22 : 0.14, big ? 0.45 : 0.3);   // body thump
+      hiss(t, big ? 0.12 : 0.07, big ? 0.22 : 0.15, 'lowpass', big ? 2200 : 3200);  // slap
+      tone('square', 90, 60, t, 0.08, 0.05, 0.002);
+    } else if (kind === 'block') {
+      tone('triangle', 900, 700, t, 0.08, 0.06, 0.002);
+      hiss(t, 0.05, 0.06, 'bandpass', 4200);
+    } else if (kind === 'whiff') {
+      hiss(t, 0.09, 0.05, 'bandpass', 1800);
+    } else if (kind === 'ko') {
+      tone('sine', 180, 40, t, 0.6, 0.5);
+      tone('square', 440, 110, t + 0.05, 0.9, 0.05, 0.01);
+      hiss(t, 0.4, 0.12, 'lowpass', 1200);
+    } else {
+      tone('square', 1320, 1320, t, 0.05, 0.03, 0.002);
+    }
+  }
+
   /* ---------- Power-on: thunk, static, degauss, flyback whine ---------- */
 
   function powerOn() {
@@ -236,8 +261,10 @@
 
   let resumeAt = parseFloat(session.get('ag-music-t') || '0') || 0;
 
+  let held = false;   // another player (the cockpit tape deck) has the floor
+
   function playMusic() {
-    if (!enabled || !powered) return;
+    if (!enabled || !powered || held) return;
     music.muted = false;
     if (resumeAt) {
       const seek = () => { try { music.currentTime = resumeAt; } catch (e) { /* ignore */ } resumeAt = 0; };
@@ -253,7 +280,7 @@
   }
 
   window.addEventListener('pagehide', () => {
-    session.set('ag-music-t', music.paused ? '0' : String(music.currentTime));
+    session.set('ag-music-t', held ? String(resumeAt) : music.paused ? '0' : String(music.currentTime));
   });
 
   /* ---------- State ---------- */
@@ -408,5 +435,13 @@
   panel();
 
   // Other scripts (the 3D lounge) can borrow the effects
-  window.agSound = { buzz, zap, slide, beep };
+  // hold(true) pauses the loop for another player; hold(false) brings it back
+  function hold(on) {
+    if (on === held) return;
+    held = on;
+    if (on) { if (!music.paused) resumeAt = music.currentTime; music.pause(); }
+    else playMusic();
+  }
+
+  window.agSound = { buzz, zap, slide, beep, hold, fx };
 })();
