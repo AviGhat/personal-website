@@ -158,6 +158,40 @@
     tone('sawtooth', 62, 58, t + 0.03, 0.3, 0.03, 0.03);    // a breath of hum
   }
 
+  /* ---------- Door: a heavy panel sliding on a metal track ---------- */
+
+  function slide() {
+    if (!enabled || !live()) return;
+    const t = ctx.currentTime;
+    // The scrape: band-passed noise swept upward as the panel picks up speed
+    const s = noiseSource(t, 1.0);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.value = 2.5;
+    bp.frequency.setValueAtTime(380, t);
+    bp.frequency.exponentialRampToValueAtTime(1500, t + 0.55);
+    bp.frequency.exponentialRampToValueAtTime(900, t + 0.85);
+    const sg = ctx.createGain();
+    env(sg, t, 0.08, 0.22, 0.75);
+    s.connect(bp).connect(sg).connect(out);
+    // The motor underneath
+    tone('sawtooth', 52, 70, t, 0.8, 0.08, 0.06);
+    // A metallic ring and the clunk at the end of travel
+    tone('triangle', 1850, 1700, t + 0.05, 0.5, 0.012, 0.02);
+    tone('sine', 120, 45, t + 0.82, 0.22, 0.32);
+    hiss(t + 0.82, 0.12, 0.08, 'lowpass', 900);
+  }
+
+  /* ---------- Console beep ---------- */
+
+  function beep() {
+    if (!enabled || !live()) return;
+    const t = ctx.currentTime;
+    const f = [880, 1175, 1320, 1568][(Math.random() * 4) | 0];
+    tone('square', f, f, t, 0.06, 0.018, 0.004);
+    if (Math.random() < 0.5) tone('square', f * 1.25, f * 1.25, t + 0.11, 0.05, 0.015, 0.004);
+  }
+
   /* ---------- Power-on: thunk, static, degauss, flyback whine ---------- */
 
   function powerOn() {
@@ -372,4 +406,7 @@
   }
 
   panel();
+
+  // Other scripts (the 3D lounge) can borrow the effects
+  window.agSound = { buzz, zap, slide, beep };
 })();

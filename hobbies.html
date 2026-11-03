@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Off Duty: Aviraj Ghatora</title>
+  <meta name="description" content="Off duty with Aviraj Ghatora: music production, esports, reading, soccer and tennis, on four CRT monitors in a ship's lounge.">
+  <meta name="theme-color" content="#0B0B0D">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Off Duty: Aviraj Ghatora">
+  <meta property="og:description" content="Four monitors, four hobbies. Tune in.">
+  <meta property="og:image" content="assets/og.jpg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syncopate:wght@400;700&family=VT323&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syncopate:wght@400;700&family=VT323&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script>
+    (function () {
+      var root = document.documentElement, pref = null;
+      try { pref = localStorage.getItem('ag-motion'); } catch (e) {}
+      var on = pref ? pref !== 'off' : true;   // FX on by default; the switch turns it off
+      root.classList.add('js', on ? 'fx-on' : 'fx-off');
+    })();
+  </script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script src="js/main.js" defer></script>
+  <script src="js/audio.js" defer></script>
+  <script type="module" src="js/hobbies.js"></script>
+</head>
+<body class="lounge-page">
+  <a class="skip" href="#channels">Skip to the hobby channels</a>
+
+  <!-- Boot sequence: first visit per session -->
+  <div class="boot" id="boot" role="dialog" aria-modal="true" aria-labelledby="boot-title">
+    <div class="boot__inner">
+      <p class="boot__tag">BEBOP-NET / CHANNEL AG</p>
+      <p class="boot__title" id="boot-title" data-boot-title>STANDBY</p>
+      <div class="boot__bar"><span class="boot__fill"></span></div>
+      <p class="boot__steps">TUBE WARM-UP / SYNC LOCK / SIGNAL ACQUIRED</p>
+      <div class="boot__gate" data-boot-gate>
+        <button class="boot__power" type="button" data-power="on">Power on <span>with sound</span></button>
+        <button class="boot__power boot__power--quiet" type="button" data-power="silent">Silent</button>
+        <p class="boot__hint">Or press any key to power on. Esc for silent.</p>
+      </div>
+      <ol class="boot__log" data-boot-log aria-hidden="true"></ol>
+    </div>
+    <button class="boot__skip" type="button" data-boot-skip hidden>SKIP &gt;&gt;</button>
+  </div>
+
+  <div class="crt" aria-hidden="true">
+    <div class="crt__grain"></div>
+    <div class="crt__scan"></div>
+    <div class="crt__roll"></div>
+    <div class="crt__tear"></div>
+    <div class="crt__frame"></div>
+  </div>
+
+  <header class="bar">
+    <a class="bar__mark" href="index.html" aria-label="Aviraj Ghatora, home">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="11" fill="none" stroke="currentColor" stroke-width="2.5"/><ellipse cx="20" cy="20" rx="19" ry="6" fill="none" stroke="currentColor" stroke-width="2" transform="rotate(-24 20 20)"/></svg>
+      <span>AG-TRN</span>
+    </a>
+    <p class="bar__cell bar__cell--status"><span class="lamp" aria-hidden="true"></span>OFF DUTY</p>
+    <a class="bar__back" href="index.html"><span aria-hidden="true">&lt;</span> <span class="bar__back-long">Back to the file</span><span class="bar__back-short">Back</span></a>
+    <button class="bar__fx" type="button" aria-pressed="true" data-fx>
+      <span class="bar__fx-lamp" aria-hidden="true"></span>FX <span data-fx-state>ON</span>
+    </button>
+  </header>
+
+  <main id="main" class="lounge">
+    <!-- The 3D lounge (decorative; the channel buttons below are the real controls) -->
+    <div class="lounge__stage" data-stage aria-hidden="true"></div>
+
+    <header class="lounge__intro lounge__intro--lounge">
+      <h1 class="lounge__title">Off duty</h1>
+      <p class="lounge__lede">The lounge. Four monitors, four channels, everything I do when the pipelines are quiet. Click a monitor to tune in, or take the stairs to the cockpit.</p>
+    </header>
+    <div class="lounge__intro lounge__intro--cockpit">
+      <p class="lounge__title" aria-hidden="true">The bridge</p>
+      <p class="lounge__lede">Pilot's seat, hyperdrive engaged, Earth below. Drag to look around; the monitor on the console has the pilot file.</p>
+    </div>
+
+    <nav class="channels-bar" id="channels" aria-label="Hobby channels">
+      <ul>
+        <li><button class="ch" type="button" data-channel="0" aria-controls="hobby-music"><span class="ch__no">CH 01</span>Music</button></li>
+        <li><button class="ch" type="button" data-channel="1" aria-controls="hobby-esports"><span class="ch__no">CH 02</span>Esports</button></li>
+        <li><button class="ch" type="button" data-channel="2" aria-controls="hobby-reading"><span class="ch__no">CH 03</span>Reading</button></li>
+        <li><button class="ch" type="button" data-channel="3" aria-controls="hobby-sports"><span class="ch__no">CH 04</span>Sports</button></li>
+        <li><button class="ch ch--deck" type="button" data-deck="cockpit"><span class="ch__no">Up the stairs</span>Cockpit</button></li>
+      </ul>
+    </nav>
+
+    <nav class="channels-bar bridge-bar" aria-label="Cockpit controls">
+      <ul>
+        <li><button class="ch" type="button" data-pilot aria-controls="about-pilot"><span class="ch__no">Pilot file</span>About me</button></li>
+        <li><button class="ch ch--deck" type="button" data-deck="lounge"><span class="ch__no">Down the stairs</span>Lounge</button></li>
+      </ul>
+    </nav>
+
+    <!-- The terminal that opens over a monitor once the camera arrives -->
+    <div class="tv" data-tv hidden>
+      <div class="tv__head">
+        <p class="tv__signal"><span class="lamp" aria-hidden="true"></span><span data-tv-label>Receiving</span></p>
+        <div class="tv__controls">
+          <button class="tv__btn" type="button" data-tv-prev aria-label="Previous channel">&lt; CH</button>
+          <button class="tv__btn" type="button" data-tv-next aria-label="Next channel">CH &gt;</button>
+          <button class="tv__btn tv__btn--close" type="button" data-tv-close>Close <kbd>Esc</kbd></button>
+        </div>
+      </div>
+
+      <!-- TODO: fill each "redacted" line below with your own specifics. -->
+      <article class="hobby" id="hobby-music" data-hobby="0" tabindex="-1" aria-labelledby="hobby-music-title" hidden>
+        <p class="hobby__ch">CH 01 / Studio feed</p>
+        <h2 class="hobby__title" id="hobby-music-title">Music production</h2>
+        <p class="hobby__lede">I make music: starting from an empty session and building layers until a track holds together.</p>
+        <p>It scratches the same itch as engineering. Signal goes in, gets shaped, comes out the other side, and the hard part is knowing when to stop adding things. The difference is that a track gets to be a little messy on purpose.</p>
+        <dl class="hobby__log">
+          <div><dt>Status</dt><dd>Active</dd></div>
+          <div><dt>Setup</dt><dd><span class="todo">TODO: DAW and gear</span></dd></div>
+          <div><dt>On repeat</dt><dd><span class="todo">TODO: artists you study</span></dd></div>
+        </dl>
+      </article>
+
+      <article class="hobby" id="hobby-esports" data-hobby="1" tabindex="-1" aria-labelledby="hobby-esports-title" hidden>
+        <p class="hobby__ch">CH 02 / Live match</p>
+        <h2 class="hobby__title" id="hobby-esports-title">Esports</h2>
+        <p class="hobby__lede">Competitive games, played to win and watched to learn.</p>
+        <p>The part I like is where strategy, reaction time and a whole team agreeing on one plan all have to work at once, usually in under a second. It's the closest thing to a production incident that's actually fun.</p>
+        <dl class="hobby__log">
+          <div><dt>Status</dt><dd>Queued up</dd></div>
+          <div><dt>Main game</dt><dd><span class="todo">TODO: game and role</span></dd></div>
+          <div><dt>Watching</dt><dd><span class="todo">TODO: teams or leagues</span></dd></div>
+        </dl>
+      </article>
+
+      <article class="hobby" id="hobby-reading" data-hobby="2" tabindex="-1" aria-labelledby="hobby-reading-title" hidden>
+        <p class="hobby__ch">CH 03 / Late programme</p>
+        <h2 class="hobby__title" id="hobby-reading-title">Reading</h2>
+        <p class="hobby__lede">Books are the cheapest way to borrow someone else's head for a while.</p>
+        <p>I read whatever pulls me in and finish what earns it. The best ones change how I think about a problem I was already working on, even when they have nothing to do with it.</p>
+        <dl class="hobby__log">
+          <div><dt>Status</dt><dd>Mid-chapter</dd></div>
+          <div><dt>Reading now</dt><dd><span class="todo">TODO: current book</span></dd></div>
+          <div><dt>Would recommend</dt><dd><span class="todo">TODO: one favourite</span></dd></div>
+        </dl>
+      </article>
+
+      <article class="hobby" id="hobby-sports" data-hobby="3" tabindex="-1" aria-labelledby="hobby-sports-title" hidden>
+        <p class="hobby__ch">CH 04 / Field report</p>
+        <h2 class="hobby__title" id="hobby-sports-title">Soccer + tennis</h2>
+        <p class="hobby__lede">Soccer for the team game, tennis for the one-on-one.</p>
+        <p>Two different kinds of pressure. On the pitch it's about moving with ten other people; on the court there's nobody to cover for you. Both reward the same habit: reading the play a beat before it happens.</p>
+        <dl class="hobby__log">
+          <div><dt>Status</dt><dd>Match fit</dd></div>
+          <div><dt>Soccer</dt><dd><span class="todo">TODO: position / where you play</span></dd></div>
+          <div><dt>Tennis</dt><dd><span class="todo">TODO: style or favourite shot</span></dd></div>
+        </dl>
+      </article>
+
+      <article class="hobby" id="about-pilot" data-hobby="4" tabindex="-1" aria-labelledby="about-pilot-title" hidden>
+        <p class="hobby__ch">Bridge / Pilot file</p>
+        <h2 class="hobby__title" id="about-pilot-title">Aviraj Ghatora</h2>
+        <p class="hobby__lede">Data and software engineer. Mathematician by training, heading for AI and data engineering.</p>
+        <p>I studied mathematics at the University of Toronto, with minors in computer science and business. Now I'm a Junior Associate at Export Development Canada, building the pipelines that move data into Databricks, the API integrations around them, and the tests that keep them honest. Before that I finished a four-month data integration project in one month at HomeTrust / Fairstone Bank.</p>
+        <dl class="hobby__log">
+          <div><dt>Station</dt><dd>Export Development Canada, Toronto</dd></div>
+          <div><dt>Training</dt><dd>Hons. BSc Mathematics, UofT; minors in CS and business</dd></div>
+          <div><dt>Flies with</dt><dd>Python, SQL, Databricks, Spark, Azure, React</dd></div>
+          <div><dt>Heading</dt><dd>AI and data engineering</dd></div>
+        </dl>
+        <p class="hobby__links">
+          <a href="portfolio.html">Full file</a>
+          <a href="assets/Aviraj_Ghatora_Resume.pdf" target="_blank" rel="noopener">Resume</a>
+          <a href="https://github.com/AviGhat" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://www.linkedin.com/in/aviraj-ghatora/" target="_blank" rel="noopener">LinkedIn</a>
+        </p>
+      </article>
+    </div>
+
+    <p class="lounge__hint" data-hint aria-hidden="true">Drag to look around. Click a monitor, or the door up the stairs.</p>
+  </main>
+</body>
+</html>
