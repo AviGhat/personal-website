@@ -25,6 +25,7 @@ The site is a recovered bounty terminal from a 90s space-western ship. All token
 - **Redaction (`.todo`)**: a dark bar marking missing content. Replace it with real text; never delete the bar and leave the gap empty.
 
 ## Home page (index.html): the wanted console
+- The **Hobbies** key leads the rail: full width, red edge, a blinking green lamp, an amber label, the line "Off duty: walk the 3D lounge", and a nudging `>>`, so visitors find the lounge first.
 - Layout follows the Asimov bounty screen, recoloured warm: key rail left, portrait centre, file data right, status line along the bottom. Panel tokens: `--panel`, `--panel-hi`, `--panel-edge`, `--led-off`.
 - **Keys**: chamfered hardware buttons with a lamp and a hotkey cap. Hover or focus inverts them to amber, and clicking presses them down before the page changes. The keyboard letter triggers the key. Focus thickens the key's edge, because clip-path swallows outlines.
 - **Portrait**: the photo re-drawn as an amber halftone on canvas, with a red plate slightly off register. Hover, tap, Enter or Space reveals the tinted photo underneath.
@@ -53,7 +54,12 @@ Boot sequence (first visit per session), dot-matrix name that reacts to the poin
 - Interaction: drag to look around, hover a monitor to buzz and light it, click or press a channel button to fly the camera in (1.1s) and open the `.tv` terminal. The terminal is translucent `--tv-glass` with scanlines and powers on like a tube. Esc, Close or a click on empty space flies back. On wide screens the monitor sits left with the terminal right; on phones the terminal docks at the bottom.
 - The hobby copy is real HTML (`.hobby` articles), so it's readable without WebGL (`.no-webgl` falls back to a plain list). Specifics still to fill are marked `.todo`.
 - Set dressing lives in `js/lounge-world.js`:
-  - Hull: metallic materials with RoomEnvironment reflections. A riveted viewport sits in the left wall over the gaming corner; through it, hyperspace streaks slide past, and a cool light shaft falls in.
+  - Hull: metallic materials with RoomEnvironment reflections. A long riveted viewport (about 8.4 by 3.6 units, three mullions and a transom) runs most of the left wall, over the gaming corner and the window nook; through it, hyperspace streaks slide past and a cool light shaft falls in, breathing slightly. The wall terminal sits past its front end.
+  - Portholes: three round windows high on the right wall, each showing streaks sliding past toward the stern.
+  - Levels: a raised window nook along the viewport (teal cushion, pillows, a paperback and a mug, a toe light), and a garden catwalk along the back wall at landing height, off the stairs. The catwalk has a grated deck, a rail, warm lights underneath, a planter trough with a warm grow-light bar, and trailing pots whose vines spill over the edge.
+  - Plants (`plant()` in `js/lounge-world.js`): snake plants, broad-leaved plants and trailing vines in rust pots, swaying slightly. They sit on the catwalk and the nook, on the floor by the arcade, bed and short couch, and in four planters hung from the ceiling. Colours are `--leaf` and `--leaf-light`.
+  - Holo clock: on the back wall above the bed, projected up from a small emitter with a cyan lens and a faint beam. It shows the visitor's own date and time in their time zone (zone name and UTC offset). It's additive cyan with a red ghost offset, scanlines and an occasional flicker. Hover brightens it; a click cycles three faces (digital, an analog dial, a world clock with UTC, London, New York and Tokyo) with a zap and a quick slice glitch.
+  - Dynamic light: every few seconds something bright passes outside the viewport, a point light in amber, blue or warm white that sweeps the window length and washes across the room while the glass brightens. Off with FX off; skipped on phones.
   - Floor: plates in two tones, grated side strips, hazard edging, and two woven rugs.
   - Cozy props: a gaming corner (desk, two live screens, lit keyboard, PC tower, chair, headphones); a bed with a striped blanket and pillows; a coffee table with a steaming mug; a floor lamp, a hanging lantern and a bedside lamp; a wall terminal; a gig poster; a bulkhead door; cargo.
   - A ceiling fan light: spinning blades, a soft additive light cone and a cool spotlight.

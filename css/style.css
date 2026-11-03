@@ -90,6 +90,8 @@
   --cockpit-trim:  #5E6976;
   --seat-pad:      #C9C2AE;
   --floor-light:   #6FC3FF;
+  --leaf:          #3F6E46;   /* lounge plants */
+  --leaf-light:    #6E9A4E;
   /* Arcade cabinet: Road Fighter's fighters */
   --fx-skin:       #C68A5C;
   --fx-hair:       #1C1612;
@@ -1311,6 +1313,21 @@ html.fx-off { scroll-behavior: auto; }
 
 .key--hot .key__lamp { background: var(--bebop-red); }
 
+/* The featured key: the way into the 3D lounge, full width at the top of the rail */
+.keys__feature { grid-column: 1 / -1; }
+.key--feature { --cut: 14px; padding: 2px; background: var(--bebop-red); min-height: 64px; }
+.key--feature .key__face { min-height: 60px; background: var(--panel-hi); font-size: 0.9rem; }
+.key--feature .key__label { color: var(--amber); }
+.key__sub { display: block; margin-top: 0.2rem; font-family: var(--f-mono); font-weight: 400; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: none; color: var(--ink); }
+.key--feature .key__lamp { height: 22px; background: var(--neon); }
+.fx-on .key--feature .key__lamp { animation: blink 1.2s steps(1, end) infinite; }
+.key__go { font-family: var(--f-crt); font-size: 1.4rem; color: var(--bebop-red); }
+.fx-on .key__go { animation: go-nudge 1.2s steps(3, end) infinite; }
+@keyframes go-nudge { 50% { transform: translateX(4px); } }
+.key--feature:hover .key__face, .key--feature:focus-visible .key__face, .key--feature.is-pressed .key__face { background: var(--phosphor); }
+.key--feature:hover :is(.key__label, .key__sub, .key__go), .key--feature:focus-visible :is(.key__label, .key__sub, .key__go), .key--feature.is-pressed :is(.key__label, .key__sub, .key__go) { color: var(--space-black); }
+.key--feature:focus-visible { padding: 4px; background: var(--cream); }
+
 /* Pending keys: visible, pressable, but they answer "no signal" */
 .key--pending .key__face { color: var(--ink-dim); }
 .key--pending:hover .key__face, .key--pending:focus-visible .key__face { background: var(--redact); color: var(--ink); }
@@ -1705,7 +1722,9 @@ html.fx-off { scroll-behavior: auto; }
 .lounge[data-mode="cockpit"] .lounge__hint, .lounge[data-mode="transit"] .lounge__hint { display: none; }
 /* In the cockpit the console fills the lower half: title goes over the side wall */
 .lounge__intro--cockpit { top: calc(var(--bar-h) + var(--s-3)); bottom: auto; }
-.lounge__hint { pointer-events: none; max-width: 22ch; text-align: right; line-height: 1.6; }
+.lounge__hint { pointer-events: none; max-width: 22ch; line-height: 1.6; }
+/* Top-left, clear of the holo clock over the bed */
+.lounge__hint { right: auto; left: var(--gutter); text-align: left; }
 
 /* ---------- Cockpit tape deck: the holographic player ---------- */
 
