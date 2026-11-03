@@ -551,6 +551,7 @@ function buildScene() {
     const i = pick();
     if (i >= 0) return { kind: 'monitor', i };
     if (hits(arcade.hits)) return { kind: 'arcade' };
+    if (hits(world.clockHits)) return { kind: 'clock' };
     if (hits(world.doorHits)) return { kind: 'door' };
     if (hits(world.dogHits)) return { kind: 'dog' };
     return null;
@@ -596,6 +597,7 @@ function buildScene() {
     }
     hovered = t && t.kind === 'monitor' ? t.i : -1;
     arcade.setHot(!!t && t.kind === 'arcade');
+    world.setClockHot(!!t && t.kind === 'clock');
     cockpit.setHot(!!t && t.kind === 'about');
     cockpit.setTapeHot(!!t && t.kind === 'tape');
     chButtons.forEach((b) => b.classList.toggle('is-hot', Number(b.dataset.channel) === (t && t.kind === 'arcade' ? ARCADE : hovered)));
@@ -608,6 +610,7 @@ function buildScene() {
     const t = target(e);
     if (t && t.kind === 'monitor') { sound('zap'); open(t.i, chButton(t.i)); }
     else if (t && t.kind === 'arcade') { sound('zap'); open(ARCADE, chButton(ARCADE)); }
+    else if (t && t.kind === 'clock') { sound('zap'); world.cycleClock(); }
     else if (t && t.kind === 'about') { sound('zap'); open(ABOUT, pilotButtons[0]); }
     else if (t && t.kind === 'tape') { sound('zap'); open(DECK, tapeButtons[0]); }
     else if (t && t.kind === 'door') goCockpit();
@@ -621,6 +624,7 @@ function buildScene() {
     cockpit.setTapeHot(false);
     chButtons.forEach((b) => b.classList.remove('is-hot'));
     arcade.setHot(false);
+    world.setClockHot(false);
   });
 
   /* ---------- Loop ---------- */

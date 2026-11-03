@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* ==========================================================
-   The lounge itself: hull, a side viewport onto hyperspace, the cockpit door, rugs,
-   furniture, lamps, a ceiling fan light, and the ship's corgi.
+   The lounge itself: hull, a long side viewport onto hyperspace, portholes,
+   the cockpit door, a window nook and a garden catwalk, rugs, furniture,
+   plants, lamps, a ceiling fan light, and the ship's corgi.
    Everything is built in code. Returns per-frame updaters.
    ========================================================== */
 
@@ -145,10 +146,11 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
   wall(2.0, 3.03, 2.3, 1.515, WZ);
   wall(2.0, 2.35, 2.3, 6.825, WZ);
 
-  // Left wall, built around the viewport over the gaming corner (z -5.8..-1.0, y 1.9..4.8)
-  const vz0 = -5.8, vz1 = -1.0, vy0 = 1.9, vy1 = 4.8, vzc = (vz0 + vz1) / 2, vyc = (vy0 + vy1) / 2, vlen = vz1 - vz0, vh = vy1 - vy0;
-  wall(0.7, 8, -8, 4, -6.15, Math.PI / 2);
-  wall(9.5, 8, -8, 4, 3.75, Math.PI / 2);
+  // Left wall, built around the long viewport over the gaming corner and the window
+  // nook (z -6.0..2.4, y 1.45..5.1); the pipes run just above it
+  const vz0 = -6.0, vz1 = 2.4, vy0 = 1.45, vy1 = 5.1, vzc = (vz0 + vz1) / 2, vyc = (vy0 + vy1) / 2, vlen = vz1 - vz0, vh = vy1 - vy0;
+  wall(vz0 - WZ, 8, -8, 4, (WZ + vz0) / 2, Math.PI / 2);
+  wall(7.5 - vz1, 8, -8, 4, (7.5 + vz1) / 2, Math.PI / 2);
   wall(vlen, vy0, -8, vy0 / 2, vzc, Math.PI / 2);
   wall(vlen, 8 - vy1, -8, (8 + vy1) / 2, vzc, Math.PI / 2);
   wall(15, 8, 8, 4, 1, -Math.PI / 2);
@@ -166,8 +168,8 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
   box(0.5, 0.32, vlen + 0.5, hullMid, -7.8, vy0 - 0.1, vzc);
   box(0.4, vh + 0.5, 0.28, hullMid, -7.85, vyc, vz0 - 0.1);
   box(0.4, vh + 0.5, 0.28, hullMid, -7.85, vyc, vz1 + 0.1);
-  box(0.18, vh, 0.12, hullDark, -7.95, vyc, vzc);
-  box(0.18, 0.1, vlen, hullDark, -7.95, vyc + 0.35, vzc);
+  for (let k = 1; k < 4; k++) box(0.18, vh, 0.12, hullDark, -7.95, vyc, vz0 + (vlen * k) / 4);   // mullions
+  box(0.18, 0.1, vlen, hullDark, -7.95, vyc + 0.55, vzc);
   for (let z = vz0 + 0.2; z <= vz1 - 0.1; z += 0.6) {
     mesh(new THREE.SphereGeometry(0.045, 8, 6), hullDark, -7.64, vy1 + 0.1, z);
     mesh(new THREE.SphereGeometry(0.045, 8, 6), hullDark, -7.54, vy0 - 0.1, z);
@@ -178,12 +180,32 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
   glass.rotation.y = Math.PI / 2;
   scene.add(glass);
 
-  // Cool light falling in through the viewport
+  // Cool light falling in through the viewport, breathing as the streaks thicken and thin
   if (!small) {
-    const shaft = new THREE.SpotLight(color('--atmo'), 45, 14, 0.6, 0.8, 1.6);
-    shaft.position.set(-8.6, vyc + 0.4, vzc);
-    shaft.target.position.set(-4.5, 0, -2.6);
+    const shaft = new THREE.SpotLight(color('--atmo'), 55, 16, 0.8, 0.8, 1.6);
+    shaft.position.set(-9.2, vyc + 0.6, vzc);
+    shaft.target.position.set(-4.2, 0, -1.2);
     scene.add(shaft, shaft.target);
+    // Now and then something bright passes outside: a beacon or a ship's running
+    // light, sweeping the length of the window and washing across the room
+    const sweep = new THREE.PointLight(color('--amber'), 0, 12, 1.6);
+    scene.add(sweep);
+    const tints = [color('--amber'), color('--atmo'), color('--lamp-warm')];
+    let next = 2, pass = -1, tint = 0;
+    live((t, dt) => {
+      if (!motion()) { sweep.intensity = 0; shaft.intensity = 55; return; }
+      shaft.intensity = 55 * (0.85 + 0.1 * Math.sin(t * 0.0021) + 0.05 * Math.sin(t * 0.0137));
+      if (pass < 0) {
+        next -= dt;
+        if (next <= 0) { pass = 0; tint = (tint + 1) % tints.length; sweep.color.copy(tints[tint]); }
+        return;
+      }
+      pass += dt / 5.5;
+      sweep.position.set(-9.3, vyc, vz0 - 3 + pass * (vlen + 6));
+      sweep.intensity = 30 * Math.sin(Math.PI * Math.min(1, pass));
+      glass.material.opacity = 0.05 + 0.08 * Math.sin(Math.PI * Math.min(1, pass));
+      if (pass >= 1) { pass = -1; next = 4 + Math.random() * 7; sweep.intensity = 0; glass.material.opacity = 0.05; }
+    });
   }
 
   /* ---------- The cockpit door: two panels that slide into the wall ---------- */
@@ -324,9 +346,12 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
     [0, 4, 8].forEach((k) => rod(V(sx + dx, rise * (k + 1), sz - run * k), V(sx + dx, rise * (k + 1) + 1.0, sz - run * k), 0.025, railMat));
   });
   box(3.4, 0.12, 1.5, hullMid, 2.25, topY, topZ - 0.9);
-  rod(V(0.55, topY + 1.0, topZ - 0.2), V(3.95, topY + 1.0, topZ - 0.2), 0.04, railMat);
-  rod(V(0.55, topY + 0.5, topZ - 0.2), V(3.95, topY + 0.5, topZ - 0.2), 0.025, railMat);
-  for (let x = 0.55; x <= 3.96; x += 0.85) rod(V(x, topY, topZ - 0.2), V(x, topY + 1.0, topZ - 0.2), 0.025, railMat);
+  // The landing's front rail stops either side of the stairs, leaving the way to the door open
+  [[0.55, sx - 0.95], [sx + 0.95, 3.95]].forEach(([a, b]) => {
+    rod(V(a, topY + 1.0, topZ - 0.2), V(b, topY + 1.0, topZ - 0.2), 0.04, railMat);
+    rod(V(a, topY + 0.5, topZ - 0.2), V(b, topY + 0.5, topZ - 0.2), 0.025, railMat);
+    [a, b].forEach((x) => rod(V(x, topY, topZ - 0.2), V(x, topY + 1.0, topZ - 0.2), 0.025, railMat));
+  });
 
   const door = new THREE.Group();
   rbox(2.4, 3.4, 0.2, 0.1, hullMid, 0, 1.7, 0, door);
@@ -352,7 +377,7 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
   const termScreen = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.95), new THREE.MeshBasicMaterial({ map: termTex, toneMapped: false }));
   termScreen.position.z = 0.07;
   term.add(termScreen);
-  term.position.set(-7.92, 2.6, 0.8);
+  term.position.set(-7.92, 2.6, 4.9);   // on the wall past the end of the viewport
   term.rotation.y = Math.PI / 2;
   scene.add(term);
   const drawTerm = (t) => {
@@ -496,6 +521,158 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
     }
   };
 
+  /* ---------- Plants ---------- */
+
+  const leafA = mat('--leaf', 0.75, 0.0, { envMapIntensity: 0.2 });
+  const leafB = mat('--leaf-light', 0.75, 0.0, { envMapIntensity: 0.2 });
+  const potMat = mat('--rail', 0.8, 0.1);
+  const soil = mat('--coffee', 1, 0);
+  const swaying = [];
+  const pot = (r, h, parent) => {
+    mesh(new THREE.CylinderGeometry(r, r * 0.78, h, 14), potMat, 0, h / 2, 0, parent);
+    mesh(new THREE.CylinderGeometry(r * 0.92, r * 0.92, 0.02, 14), soil, 0, h - 0.02, 0, parent);
+  };
+  // kind: 'snake' (upright blades), 'leafy' (broad leaves on stems), 'trail' (vines spilling over)
+  const plant = (kind, x, y, z, k = 1, parent = scene) => {
+    const g = new THREE.Group();
+    const r = 0.2 * k, h = 0.32 * k;
+    pot(r, h, g);
+    const crown = new THREE.Group();
+    crown.position.y = h;
+    g.add(crown);
+    if (kind === 'snake') {
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2, len = (0.55 + (i % 3) * 0.2) * k;
+        const b = box(0.11 * k, len, 0.025 * k, i % 2 ? leafA : leafB, Math.cos(a) * 0.07 * k, len / 2, Math.sin(a) * 0.07 * k, crown);
+        b.rotation.set(Math.sin(a) * 0.18, a, Math.cos(a) * 0.18);
+      }
+    } else if (kind === 'leafy') {
+      for (let i = 0; i < 8; i++) {
+        const a = i * 2.4, lift = (0.35 + (i % 4) * 0.14) * k, out = (0.22 + (i % 3) * 0.08) * k;
+        rod(V(0, 0, 0), V(Math.cos(a) * out * 0.7, lift, Math.sin(a) * out * 0.7), 0.012 * k, leafA, crown);
+        const leaf = mesh(new THREE.SphereGeometry(0.2 * k, 10, 6), i % 2 ? leafA : leafB, Math.cos(a) * out, lift + 0.02, Math.sin(a) * out, crown);
+        leaf.scale.set(1, 0.12, 0.7);
+        leaf.rotation.set(0.35 * Math.sin(a), -a, 0.35 * Math.cos(a));
+      }
+    } else {
+      for (let i = 0; i < 5; i++) {
+        const a = i * 1.26, dx = Math.cos(a), dz = Math.sin(a), drop = (0.6 + (i % 3) * 0.35) * k;
+        const vine = new THREE.CatmullRomCurve3([V(dx * 0.1 * k, 0.04, dz * 0.1 * k), V(dx * r * 1.3, 0.02, dz * r * 1.3), V(dx * r * 1.6, -drop * 0.5, dz * r * 1.6), V(dx * r * 1.4, -drop, dz * r * 1.4)]);
+        crown.add(new THREE.Mesh(new THREE.TubeGeometry(vine, 12, 0.008 * k, 4), leafA));
+        for (let j = 1; j <= 6; j++) {
+          const p = vine.getPoint(j / 6.5);
+          const leaf = mesh(new THREE.SphereGeometry(0.06 * k, 6, 4), j % 2 ? leafA : leafB, p.x, p.y, p.z, crown);
+          leaf.scale.set(1, 0.35, 0.8);
+          leaf.castShadow = false;
+        }
+      }
+    }
+    g.position.set(x, y, z);
+    parent.add(g);
+    swaying.push({ crown, phase: x * 1.7 + z });
+    return g;
+  };
+  live((t) => {
+    if (!motion()) return;
+    swaying.forEach(({ crown, phase }) => { crown.rotation.z = Math.sin(t * 0.0007 + phase) * 0.03; crown.rotation.x = Math.sin(t * 0.0005 + phase * 0.7) * 0.02; });
+  });
+
+  /* ---------- Window nook: a raised seat along the viewport ---------- */
+
+  const nookZ0 = -2.6, nookZ1 = 2.3, nookLen = nookZ1 - nookZ0, nookZc = (nookZ0 + nookZ1) / 2;
+  box(1.05, 0.42, nookLen, hullMid, -7.45, 0.21, nookZc);                              // dais
+  box(0.06, 0.04, nookLen, amberGlow, -6.9, 0.05, nookZc).castShadow = false;            // toe light
+  box(0.5, 0.2, nookLen, hullDark, -6.7, 0.1, nookZc);                                   // step
+  rbox(0.95, 0.16, nookLen - 0.1, 0.06, mat('--rug-teal', 0.95, 0, { envMapIntensity: 0.1 }), -7.45, 0.5, nookZc);   // cushion
+  [[-1.4, '--bebop-red', 0.4], [-0.7, '--amber', -0.3], [1.5, '--cream', 0.2]].forEach(([dz, c, ry]) => {
+    rbox(0.16, 0.42, 0.5, 0.08, mat(c, 0.95, 0), -7.78, 0.78, nookZc + dz).rotation.set(0, ry, -0.15);
+  });
+  // A paperback and a mug on the sill
+  box(0.24, 0.05, 0.17, mat('--cream', 0.9, 0), -7.6, 0.6, nookZc + 0.6).rotation.y = 0.3;
+  mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.13, 12), mat('--bebop-red', 0.6, 0.1), -7.7, 0.645, nookZc + 0.95);
+  plant('snake', -7.5, 0.42, nookZ0 + 0.3, 1.05);
+  plant('leafy', -7.5, 0.42, nookZ1 - 0.25, 1.1);
+
+  /* ---------- Garden catwalk: a second level along the back wall, off the stair landing ---------- */
+
+  const cwX0 = -6.6, cwX1 = 0.55, cwLen = cwX1 - cwX0, cwXc = (cwX0 + cwX1) / 2, cwZ = -5.85, cwEdge = -5.2;
+  box(cwLen, 0.12, 1.3, hullMid, cwXc, topY, cwZ);
+  const cwGrate = new THREE.Mesh(new THREE.PlaneGeometry(cwLen - 0.1, 1.2), grateMat);
+  cwGrate.rotation.x = -Math.PI / 2;
+  cwGrate.position.set(cwXc, topY + 0.065, cwZ);
+  cwGrate.receiveShadow = true;
+  scene.add(cwGrate);
+  box(cwLen, 0.04, 0.04, amberGlow, cwXc, topY - 0.08, cwEdge + 0.02).castShadow = false;   // edge light
+  // Posts down to the deck, clear of the arcade cabinet
+  [-6.45, -5.0, -2.5, -0.9].forEach((x) => rod(V(x, 0, cwEdge + 0.08), V(x, topY, cwEdge + 0.08), 0.05, hullDark));
+  // Railing to match the landing
+  rod(V(cwX0, topY + 1.0, cwEdge), V(cwX1, topY + 1.0, cwEdge), 0.04, railMat);
+  rod(V(cwX0, topY + 0.5, cwEdge), V(cwX1, topY + 0.5, cwEdge), 0.025, railMat);
+  rod(V(cwX0, topY + 1.0, WZ), V(cwX0, topY + 1.0, cwEdge), 0.04, railMat);
+  for (let x = cwX0; x <= cwX1 - 0.4; x += 0.9) rod(V(x, topY, cwEdge), V(x, topY + 1.0, cwEdge), 0.025, railMat);
+  // Warm lights tucked under the walkway
+  for (let x = cwX0 + 0.8; x < cwX1 - 0.4; x += 1.8) box(0.5, 0.03, 0.1, warm, x, topY - 0.08, cwZ).castShadow = false;
+  lamp('--lamp-warm', 5, 5, -2.8, topY - 0.4, cwZ + 0.3);
+  // Planters: a long trough at the back, trailing pots on the rail spilling vines over the edge
+  box(cwLen - 1.4, 0.36, 0.38, potMat, cwXc - 0.3, topY + 0.24, WZ + 0.3);
+  box(cwLen - 1.5, 0.02, 0.32, soil, cwXc - 0.3, topY + 0.43, WZ + 0.3);
+  [-6.0, -4.8, -3.4, -2.0, -0.6].forEach((x, i) => plant(i % 2 ? 'leafy' : 'snake', x, topY + 0.24, WZ + 0.3, 0.9 + (i % 3) * 0.12));
+  [-5.6, -3.0, -1.4].forEach((x) => plant('trail', x, topY + 0.065, cwEdge - 0.18, 1.3));
+  // A grow-light bar over the trough, and a crate to sit on
+  box(cwLen - 1.6, 0.05, 0.12, glow('--lamp-warm'), cwXc - 0.3, topY + 1.7, WZ + 0.22).castShadow = false;
+  rod(V(cwXc - 2.8, topY + 1.7, WZ + 0.2), V(cwXc - 2.8, topY + 2.2, WZ + 0.05), 0.012, hullDark);
+  rod(V(cwXc + 2.2, topY + 1.7, WZ + 0.2), V(cwXc + 2.2, topY + 2.2, WZ + 0.05), 0.012, hullDark);
+  box(0.6, 0.4, 0.5, mat('--rail', 0.7, 0.3), -4.1, topY + 0.26, cwZ + 0.1).rotation.y = 0.2;
+
+  /* ---------- Hanging planters ---------- */
+
+  [[-6.3, 4.7, 2.2], [-3.9, 5.1, 3.3], [5.2, 4.8, 2.6], [3.9, 5.0, -3.3]].forEach(([x, y, z]) => {
+    rod(V(x, y + 0.32, z), V(x, 8, z), 0.01, hullDark);
+    [0, 2.1, 4.2].forEach((a) => rod(V(x, y + 0.32, z), V(x + Math.cos(a) * 0.18, y + 0.62, z + Math.sin(a) * 0.18), 0.006, hullDark));
+    plant('trail', x, y, z, 1.1);
+  });
+
+  /* ---------- Floor plants ---------- */
+
+  plant('snake', -5.25, 0, -6.05, 1.5);       // under the catwalk, beside the arcade
+  plant('leafy', -1.7, 0, -5.9, 1.6);
+  plant('leafy', 6.3, 0, 2.7, 1.5);           // beside the short couch
+  plant('snake', 4.75, 0, -2.75, 1.3);        // at the foot of the bed
+
+  /* ---------- Portholes: round windows onto the streaks ---------- */
+
+  const portCanvas = document.createElement('canvas');
+  portCanvas.width = portCanvas.height = 128;
+  const portTex = new THREE.CanvasTexture(portCanvas);
+  portTex.colorSpace = THREE.SRGBColorSpace;
+  const portStreaks = Array.from({ length: 22 }, () => ({ x: Math.random() * 160, y: Math.random() * 128, l: 8 + Math.random() * 40, c: ['--amber', '--cream', '--neon-cyan', '--neon'][Math.floor(Math.random() * 4)] }));
+  const porthole = (x, y, z, ry, r = 0.45) => {
+    const g = new THREE.Group();
+    mesh(new THREE.TorusGeometry(r + 0.06, 0.07, 10, 28), hullMid, 0, 0, 0.05, g).castShadow = false;
+    const pane = new THREE.Mesh(new THREE.CircleGeometry(r, 28), new THREE.MeshBasicMaterial({ map: portTex, toneMapped: false }));
+    pane.position.z = 0.02;
+    g.add(pane);
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      mesh(new THREE.SphereGeometry(0.025, 6, 4), hullDark, Math.cos(a) * (r + 0.06), Math.sin(a) * (r + 0.06), 0.12, g).castShadow = false;
+    }
+    g.position.set(x, y, z);
+    g.rotation.y = ry;
+    scene.add(g);
+  };
+  [0.6, 2.0, 3.4].forEach((z) => porthole(7.97, 3.5, z, -Math.PI / 2));
+  live((t, dt) => {
+    const g = portCanvas.getContext('2d');
+    g.fillStyle = token('--space-black'); g.fillRect(0, 0, 128, 128);
+    portStreaks.forEach((p) => {
+      if (motion()) { p.x += dt * (160 + p.l * 5); if (p.x - p.l > 128) { p.x = -10; p.y = Math.random() * 128; } }
+      g.fillStyle = token(p.c); g.globalAlpha = 0.8;
+      g.fillRect(p.x - p.l, p.y, p.l, 2);
+    });
+    g.globalAlpha = 1;
+    portTex.needsUpdate = true;
+  });
+
   /* ---------- Lamps and the hanging lantern ---------- */
 
   const floorLamp = new THREE.Group();
@@ -550,6 +727,112 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
   fanLight.target.position.set(-1.9, 0, -2.2);
   scene.add(fanLight, fanLight.target);
   live((t, dt) => { if (motion()) blades.rotation.y += dt * 2.4; });
+
+  /* ---------- Holo clock over the bed: the visitor's own date and time ---------- */
+
+  // Projected from a small emitter on the wall above the headboard. The time comes
+  // from the visitor's clock and time zone. Click to cycle: digital, analog, world.
+  const CLOCK_W = 512, CLOCK_H = 320;
+  const clockCanvas = document.createElement('canvas');
+  clockCanvas.width = CLOCK_W; clockCanvas.height = CLOCK_H;
+  const clockTex = new THREE.CanvasTexture(clockCanvas);
+  clockTex.colorSpace = THREE.SRGBColorSpace;
+  const clockMat = new THREE.MeshBasicMaterial({ map: clockTex, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+  const clockPanel = new THREE.Mesh(new THREE.PlaneGeometry(2.24, 1.4), clockMat);
+  clockPanel.position.set(6.4, 3.6, WZ + 0.4);
+  scene.add(clockPanel);
+  // The emitter, its lens, and a faint beam fanning up to the picture
+  box(0.44, 0.12, 0.22, hullDark, 6.4, 2.3, WZ + 0.12);
+  const clockLens = box(0.16, 0.03, 0.08, glow('--neon-cyan'), 6.4, 2.375, WZ + 0.16);
+  clockLens.castShadow = false;
+  const clockBeam = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.08, 0.06, 0.55, 20, 1, true),
+    new THREE.MeshBasicMaterial({ color: color('--neon-cyan'), transparent: true, opacity: 0.05, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+  );
+  clockBeam.position.set(6.4, 2.63, WZ + 0.3);
+  clockBeam.scale.z = 0.25;
+  scene.add(clockBeam);
+  const clockHits = [clockPanel];
+
+  const zone = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local'; } catch (e) { return 'Local'; } })();
+  const offset = (d) => {
+    const m = -d.getTimezoneOffset(), sign = m >= 0 ? '+' : '-', a = Math.abs(m);
+    return `UTC${sign}${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')}`;
+  };
+  const at = (d, tz) => { try { return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }); } catch (e) { return '--:--'; } };
+  const WORLD = [['UTC', 'UTC'], ['LONDON', 'Europe/London'], ['NEW YORK', 'America/New_York'], ['TOKYO', 'Asia/Tokyo']];
+  let clockMode = 0, clockHot = false, glitch = 0;
+
+  const drawClock = (t) => {
+    const g = clockCanvas.getContext('2d');
+    const d = new Date();
+    const ink = token('--neon-cyan'), dim = token('--atmo'), split = token('--bebop-red');
+    g.clearRect(0, 0, CLOCK_W, CLOCK_H);
+    // Text twice: a red ghost offset under the cyan, like a projection slightly out of register
+    const say = (s, x, y, size, c = ink, align = 'center', font = 'VT323, monospace') => {
+      g.font = `${size}px ${font}`; g.textAlign = align;
+      g.globalAlpha = 0.55; g.fillStyle = split; g.fillText(s, x - 2, y);
+      g.globalAlpha = 1; g.fillStyle = c; g.fillText(s, x, y);
+    };
+    // Frame: corner brackets and a header line
+    g.strokeStyle = ink; g.lineWidth = 3;
+    [[8, 8, 1, 1], [CLOCK_W - 8, 8, -1, 1], [8, CLOCK_H - 8, 1, -1], [CLOCK_W - 8, CLOCK_H - 8, -1, -1]].forEach(([x, y, sx, sy]) => {
+      g.beginPath(); g.moveTo(x + sx * 28, y); g.lineTo(x, y); g.lineTo(x, y + sy * 28); g.stroke();
+    });
+    say(['LOCAL TIME', 'DIAL', 'WORLD CLOCK'][clockMode], 24, 40, 24, dim, 'left');
+    say(`${clockMode + 1}/3`, CLOCK_W - 24, 40, 24, dim, 'right');
+
+    const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0'), ss = String(d.getSeconds()).padStart(2, '0');
+    const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+    if (clockMode === 0) {
+      say(`${hh}:${mm}`, CLOCK_W / 2 - 30, 168, 140);
+      say(ss, CLOCK_W / 2 + 168, 168, 56);
+      say(date, CLOCK_W / 2, 222, 34);
+      say(`${zone.replace(/_/g, ' ').toUpperCase()}  ${offset(d)}`, CLOCK_W / 2, 256, 22, dim);
+    } else if (clockMode === 1) {
+      const cx = CLOCK_W / 2, cy = 168, r = 104;
+      g.strokeStyle = ink; g.lineWidth = 2;
+      g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
+      for (let k = 0; k < 60; k++) {
+        const a = (k / 60) * Math.PI * 2, inner = k % 5 ? r - 8 : r - 18;
+        g.lineWidth = k % 5 ? 1 : 3;
+        g.beginPath(); g.moveTo(cx + Math.sin(a) * inner, cy - Math.cos(a) * inner); g.lineTo(cx + Math.sin(a) * r, cy - Math.cos(a) * r); g.stroke();
+      }
+      const sec = d.getSeconds() + d.getMilliseconds() / 1000, min = d.getMinutes() + sec / 60, hr = (d.getHours() % 12) + min / 60;
+      const hand = (a, len, w, c) => { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.sin(a) * len, cy - Math.cos(a) * len); g.stroke(); };
+      hand((hr / 12) * Math.PI * 2, r * 0.5, 6, ink);
+      hand((min / 60) * Math.PI * 2, r * 0.78, 4, ink);
+      hand((sec / 60) * Math.PI * 2, r * 0.88, 2, split);
+      g.fillStyle = ink; g.beginPath(); g.arc(cx, cy, 6, 0, Math.PI * 2); g.fill();
+      say(date, CLOCK_W - 24, 300, 22, dim, 'right');
+      say(`${hh}:${mm}`, 24, 300, 22, dim, 'left');
+    } else {
+      say(`HERE  ${hh}:${mm}`, 24, 100, 40, ink, 'left');
+      say(zone.split('/').pop().replace(/_/g, ' ').toUpperCase(), CLOCK_W - 24, 100, 24, dim, 'right');
+      WORLD.forEach(([name, tz], k) => {
+        say(name, 24, 150 + k * 40, 30, dim, 'left');
+        say(at(d, tz), CLOCK_W - 24, 150 + k * 40, 30, ink, 'right');
+      });
+    }
+    say(clockHot ? '> TAP TO CYCLE' : 'TAP TO CYCLE', CLOCK_W / 2, CLOCK_H - 14, 20, clockHot ? ink : dim);
+    // Scanlines, plus a slice-and-shift glitch for a moment after each switch
+    g.globalAlpha = 0.18; g.fillStyle = token('--space-black');
+    for (let y = 0; y < CLOCK_H; y += 4) g.fillRect(0, y, CLOCK_W, 2);
+    g.globalAlpha = 1;
+    if (glitch > 0) {
+      for (let k = 0; k < 5; k++) {
+        const y = Math.floor(Math.random() * CLOCK_H), h = 6 + Math.floor(Math.random() * 18);
+        g.drawImage(clockCanvas, 0, y, CLOCK_W, h, (Math.random() - 0.5) * 40 * glitch, y, CLOCK_W, h);
+      }
+    }
+    clockTex.needsUpdate = true;
+  };
+  live((t, dt) => {
+    glitch = Math.max(0, glitch - dt * 3);
+    const flick = motion() ? 0.9 + 0.06 * Math.sin(t * 0.011) + (Math.random() < 0.01 ? -0.3 : 0) : 0.92;
+    clockMat.opacity = Math.min(1, (clockHot ? 1 : 0.85) * flick + glitch * 0.2);
+    clockBeam.material.opacity = (clockHot ? 0.08 : 0.05) * flick;
+  });
 
   /* ---------- Lights ---------- */
 
@@ -661,6 +944,7 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
 
   const redraw = (t) => {
     drawTerm(t);
+    drawClock(t);
     gameScreens.forEach(({ c, tex, k }) => { drawGame(c.getContext('2d'), k, t); tex.needsUpdate = true; });
   };
 
@@ -671,5 +955,8 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
     doorHits,
     setDoor(open) { doorGoal = open ? 1 : 0; },
     pokeDog() { happy = 2.5; },
+    clockHits,
+    setClockHot(v) { clockHot = v; },
+    cycleClock() { clockMode = (clockMode + 1) % 3; glitch = 1; drawClock(performance.now()); },
   };
 }
