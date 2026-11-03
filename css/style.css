@@ -90,14 +90,15 @@
   --cockpit-trim:  #5E6976;
   --seat-pad:      #C9C2AE;
   --floor-light:   #6FC3FF;
-  /* Arcade cabinet: Dock 9 Brawl's fighters */
+  /* Arcade cabinet: Road Fighter's fighters */
   --fx-skin:       #C68A5C;
   --fx-hair:       #1C1612;
   --fx-boot:       #2A211B;
-  --fx-coat:       #4C5A4A;
-  --fx-denim:      #2F4C66;
   --fx-steel:      #8C97A3;
-  --fx-brass:      #C2903F;
+  --fx-gi-shade:   #8E2A1B;   /* the fold of Ben's red gi */
+  /* Purple at the owner's request, for the ninja only */
+  --fx-ninja:      #6A3A9C;
+  --fx-ninja-dark: #3B2158;
   /* Tape deck hologram: dark teal glass, cyan line work */
   --holo-glass:    rgb(4 24 24 / 0.82);
   --holo-line:     rgb(63 242 220 / 0.6);

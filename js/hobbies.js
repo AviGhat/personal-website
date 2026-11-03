@@ -14,7 +14,7 @@ import { buildCabinet } from './arcade.js';
    door at the top of the stairs to climb into the pilot's seat,
    where the console monitor opens the pilot file (about me) and the
    tape deck projects a player for the Spotify playlist. Back in the
-   lounge, the arcade cabinet plays Dock 9 Brawl.
+   lounge, the arcade cabinet plays Road Fighter.
    ========================================================== */
 
 const root = document.documentElement;

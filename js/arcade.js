@@ -3,7 +3,7 @@ import * as THREE from 'three';
 /* ==========================================================
    The lounge arcade cabinet: an upright with red side panels,
    a lit marquee, a joystick and six buttons. Its screen shows
-   Dock 9 Brawl (js/fighter.js): the title card when idle, the
+   Road Fighter (js/fighter.js): the title card when idle, the
    live match while someone plays.
    ========================================================== */
 
@@ -44,7 +44,7 @@ export function buildCabinet({ scene, token, color, box, canvasTexture, small, m
     g.fillStyle = token('--bebop-red'); g.fillRect(0, 0, w, h);
     g.fillStyle = token('--amber'); g.fillRect(0, 70, w, 10); g.fillRect(0, 86, w, 4);
     g.fillStyle = token('--space-black'); g.font = 'bold 30px Syncopate, sans-serif';
-    g.fillText('DOCK 9', 16, 52);
+    g.fillText('ROAD', 16, 52);
   });
   [-0.476, 0.476].forEach((x) => {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshStandardMaterial({ map: art, roughness: 0.6 }));
@@ -75,8 +75,8 @@ export function buildCabinet({ scene, token, color, box, canvasTexture, small, m
     g.fillStyle = token('--space-black'); g.fillRect(0, 0, w, h);
     g.fillStyle = token('--bebop-red'); g.fillRect(0, 0, w, 12); g.fillRect(0, h - 12, w, 12);
     g.font = 'bold 54px Syncopate, sans-serif'; g.textAlign = 'center';
-    g.fillStyle = token('--bebop-red'); g.fillText('DOCK 9 BRAWL', w / 2 + 3, 86);
-    g.fillStyle = token('--amber'); g.fillText('DOCK 9 BRAWL', w / 2, 83);
+    g.fillStyle = token('--bebop-red'); g.fillText('ROAD FIGHTER', w / 2 + 3, 86);
+    g.fillStyle = token('--amber'); g.fillText('ROAD FIGHTER', w / 2, 83);
   });
   const marquee = new THREE.Mesh(new THREE.PlaneGeometry(0.84, 0.25), new THREE.MeshBasicMaterial({ map: marqueeTex, toneMapped: false }));
   marquee.position.set(0, 1.82, 0.185);
