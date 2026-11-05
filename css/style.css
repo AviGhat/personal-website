@@ -2100,3 +2100,143 @@ html.fx-off { scroll-behavior: auto; }
   .scope__note { font-size: 0.8rem; }
 }
 .fx-off .scope.is-open { animation: none; }
+
+/* ---------- The studio, and NIGHTSHIFT on its laptop ---------- */
+
+.lounge__intro--studio, .studio-bar { display: none; }
+.lounge[data-mode="studio"] .lounge__intro--studio,
+.lounge[data-mode="studio"] .studio-bar { display: block; }
+.lounge[data-mode="studio"] .lounge__intro--lounge,
+.lounge[data-mode="studio"] .channels-bar:not(.studio-bar),
+.lounge[data-mode="studio"] .lounge__hint { display: none; }
+.lounge__intro--studio { top: calc(var(--bar-h) + var(--s-3)); bottom: auto; }
+.lounge.is-tuned .lounge__intro--studio { opacity: 0; }
+.channels-bar.studio-bar ul { grid-template-columns: repeat(2, minmax(0, 14rem)); }
+.channels-bar:not(.bridge-bar):not(.ground-bar):not(.studio-bar) ul { grid-template-columns: repeat(7, minmax(0, 1fr)); max-width: 76rem; }
+
+.daw {
+  position: absolute; z-index: 4;
+  left: max(var(--gutter), calc(50% - 38rem)); right: max(var(--gutter), calc(50% - 38rem));
+  top: calc(var(--bar-h) + var(--s-2)); bottom: calc(var(--s-3) + 64px);
+  display: flex; flex-direction: column;
+  background: var(--panel-veil); border: 1px solid var(--amber);
+  outline: none; overflow: hidden;
+}
+.daw[hidden] { display: none; }
+.fx-on .daw.is-open { animation: tv-on 0.45s steps(4, end); }
+.daw__head {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--amber);
+}
+.daw__brand { display: flex; align-items: center; gap: 0.5rem; font-family: var(--f-display); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; color: var(--amber); }
+.daw__brand span { font-family: var(--f-mono); font-weight: 400; font-size: var(--t-label); color: var(--ink-dim); letter-spacing: 0.1em; }
+.daw__saved { margin-left: auto; font-family: var(--f-crt); font-size: 1rem; color: var(--neon); }
+
+.daw__transport, .daw__tabs {
+  display: flex; flex-wrap: wrap; align-items: end; gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--rule);
+}
+.daw__field { display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); }
+.daw__field--inline { flex-direction: row; align-items: center; gap: 0.4rem; }
+.daw__field output { color: var(--amber); }
+.daw select, .daw input[type="number"] {
+  min-height: 36px; padding: 0 0.4rem;
+  background: var(--space-black); border: 1px solid var(--rule); color: var(--ink);
+  font-family: var(--f-mono); font-size: 0.85rem;
+}
+.daw input[type="number"] { width: 4.2rem; text-align: center; }
+.daw input[type="range"] { accent-color: var(--amber); }
+.daw__bpm { display: flex; }
+.daw__nudge, .daw__btn, .daw__play, .daw__ms {
+  min-height: 36px; min-width: 36px; padding: 0 0.6rem;
+  background: none; border: 1px solid var(--rule); color: var(--ink);
+  font-size: var(--t-label); letter-spacing: 0.1em; text-transform: uppercase;
+}
+.daw__play { min-width: 5rem; min-height: 44px; background: var(--amber); border-color: var(--amber); color: var(--space-black); font-family: var(--f-display); font-weight: 700; }
+.daw__play[aria-pressed="true"] { background: var(--bebop-red); border-color: var(--bebop-red); }
+.daw__btn[aria-pressed="true"], .daw__ms.is-on { background: var(--amber); border-color: var(--amber); color: var(--space-black); }
+.daw [data-d="rec"][aria-pressed="true"] { background: var(--bebop-red); border-color: var(--bebop-red); color: var(--space-black); }
+.daw__nudge:hover, .daw__btn:hover, .daw__ms:hover, .daw__nudge:focus-visible, .daw__btn:focus-visible, .daw__ms:focus-visible { border-color: var(--amber); color: var(--amber); }
+.daw__meter { width: 80px; height: 22px; align-self: center; border: 1px solid var(--rule); }
+.daw__tabs [role="tab"] {
+  min-height: 40px; padding: 0 0.9rem; background: none; border: 1px solid var(--rule); color: var(--ink);
+  font-family: var(--f-display); font-weight: 700; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.daw__tabs [role="tab"][aria-selected="true"] { background: var(--amber); border-color: var(--amber); color: var(--space-black); }
+.daw__spacer { flex: 1; }
+.daw__dl { display: inline-flex; align-items: center; text-decoration: none; border-color: var(--neon); color: var(--neon); }
+.daw__dl[hidden] { display: none; }
+
+.daw__body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 15rem; }
+.daw__view { overflow: auto; padding: 0.6rem 0.75rem; }
+.daw__view[hidden] { display: none; }
+.daw__inst { overflow-y: auto; padding: 0.6rem 0.75rem; border-left: 1px solid var(--rule); display: flex; flex-direction: column; gap: 0.55rem; }
+.daw__insttitle { font-family: var(--f-display); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; color: var(--amber); }
+.daw__knob { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+.daw__knob output { color: var(--cream); }
+.daw__knob select { width: 100%; }
+.daw__oct { display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+.daw__oct span { flex: 1; }
+.daw__check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--ink); }
+.daw__wide { width: 100%; }
+
+/* Rack: name, mute, solo, volume, then the step grid; beats alternate shade */
+.daw__rows { display: flex; flex-direction: column; gap: 4px; min-width: max-content; }
+.daw__row { display: grid; grid-template-columns: 7rem 36px 36px 4.5rem auto; align-items: center; gap: 4px; padding: 2px; border: 1px solid transparent; }
+.daw__row.is-sel { border-color: var(--amber); }
+.daw__name { min-height: 36px; padding: 0 0.5rem; text-align: left; background: var(--soot); border: 1px solid var(--rule); color: var(--ink); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.daw__row.is-sel .daw__name { background: var(--amber); color: var(--space-black); }
+.daw__mini { width: 4.5rem; }
+.daw__steps { display: grid; grid-template-columns: repeat(var(--steps), 30px); gap: 3px; }
+.daw__step { display: block; height: 34px; background: var(--soot); border: 1px solid var(--rule); }
+.daw__step.is-alt { background: var(--panel-hi); }
+.daw__step.is-on { background: var(--amber); border-color: var(--amber); }
+.daw__step--peek.is-on { background: var(--teal); border-color: var(--teal); }
+.daw__step.is-head { outline: 2px solid var(--neon); outline-offset: -2px; }
+.daw__step:focus-visible { outline: 2px solid var(--cream); outline-offset: -2px; }
+
+/* Piano roll: note names down the side, scale roots marked */
+.daw__rollbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.5rem; font-size: var(--t-small); color: var(--amber); }
+.daw__grid { display: grid; grid-template-columns: 3.6rem repeat(var(--steps), 26px); gap: 2px; min-width: max-content; }
+.daw__key { min-height: 22px; padding: 0 0.4rem; text-align: left; background: var(--bone); border: 0; color: var(--space-black); font-family: var(--f-crt); font-size: 0.95rem; }
+.daw__key.is-root { background: var(--amber); }
+.daw__cell { height: 22px; background: var(--soot); border: 0; }
+.daw__cell.is-alt { background: var(--panel-hi); }
+.daw__cell.is-root { box-shadow: inset 0 -1px 0 var(--rule); }
+.daw__cell.is-on { background: var(--neon-cyan); }
+.daw__cell.is-hold { background: var(--teal); }
+.daw__cell.is-head { outline: 1px solid var(--neon); outline-offset: -1px; }
+.daw__cell:hover, .daw__cell:focus-visible { outline: 1px solid var(--cream); outline-offset: -1px; }
+.daw__empty { padding: 2rem 0; color: var(--ink-dim); }
+
+/* Mixer strips */
+.daw__strips { display: flex; gap: 0.5rem; min-width: max-content; }
+.daw__strip { display: flex; flex-direction: column; align-items: stretch; gap: 0.35rem; width: 6.4rem; padding: 0.5rem; background: var(--soot); border: 1px solid var(--rule); }
+.daw__stripname { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); }
+.daw__level { width: 10px; height: 90px; align-self: center; border: 1px solid var(--rule); }
+.daw__strip label { display: flex; flex-direction: column; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+.daw__strip input { width: 100%; }
+.daw__msrow { display: flex; gap: 0.3rem; }
+.daw__msrow .daw__ms { flex: 1; }
+.daw__hint { padding: 0.4rem 0.75rem; border-top: 1px solid var(--rule); font-size: 0.72rem; color: var(--ink-dim); }
+
+@media (max-width: 899px) {
+  .daw { left: var(--gutter); right: var(--gutter); top: calc(var(--bar-h) + 0.5rem); bottom: calc(var(--s-3) + var(--chbar, 60px)); }
+  .daw__body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .daw__inst { border-left: 0; border-top: 1px solid var(--rule); flex-direction: row; flex-wrap: wrap; max-height: 9rem; }
+  .daw__inst > * { flex: 1 1 8rem; }
+  .daw__row { grid-template-columns: 5.5rem 36px 36px auto; }
+  .daw__mini { display: none; }
+  .daw__hint { display: none; }
+}
+@media (max-width: 767px) {
+  .channels-bar:not(.bridge-bar):not(.ground-bar):not(.studio-bar) ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .channels-bar.studio-bar ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lounge[data-mode="studio"] { --chbar: 60px; }
+  /* On phones the whole panel scrolls, so the grid gets real height instead of one row */
+  .daw { overflow-y: auto; }
+  .daw__body { flex: 0 0 auto; display: block; }
+  .daw__view { max-height: 62svh; }
+  .daw__inst { max-height: none; }
+}
+.fx-off .daw.is-open { animation: none; }

@@ -86,8 +86,12 @@
 
     <header class="lounge__intro lounge__intro--lounge">
       <h1 class="lounge__title">Off duty</h1>
-      <p class="lounge__lede">The lounge. Four monitors, four channels, everything I do when the pipelines are quiet. Click a monitor to tune in, put a coin in the arcade, or take the stairs to the cockpit.</p>
+      <p class="lounge__lede">The lounge. Four monitors, four channels, everything I do when the pipelines are quiet. Click a monitor to tune in, put a coin in the arcade, make a beat in the studio through the side door, or take the stairs to the cockpit.</p>
     </header>
+    <div class="lounge__intro lounge__intro--studio">
+      <p class="lounge__title" aria-hidden="true">The studio</p>
+      <p class="lounge__lede">Through the side door. The laptop runs NIGHTSHIFT: pick a tempo, lay down drums, write a bassline in key, mix it, and take the loop home as a WAV.</p>
+    </div>
     <div class="lounge__intro lounge__intro--cockpit">
       <p class="lounge__title" aria-hidden="true">The bridge</p>
       <p class="lounge__lede">Pilot's seat, hyperdrive engaged, Earth below. Drag to look around; there's a telescope behind you. Pull the throttle down to speed up. The monitor has the pilot file; the tape deck plays my playlist. The red button plots a course: Earth or Mars.</p>
@@ -109,6 +113,7 @@
         <li><button class="ch" type="button" data-channel="2" aria-controls="hobby-reading"><span class="ch__no">CH 03</span>Reading</button></li>
         <li><button class="ch" type="button" data-channel="3" aria-controls="hobby-sports"><span class="ch__no">CH 04</span>Sports</button></li>
         <li><button class="ch" type="button" data-channel="6" aria-controls="arcade"><span class="ch__no">CH 05</span>Arcade</button></li>
+        <li><button class="ch" type="button" data-studio><span class="ch__no">CH 06</span>Studio</button></li>
         <li><button class="ch ch--deck" type="button" data-deck="cockpit"><span class="ch__no">Up the stairs</span>Cockpit</button></li>
       </ul>
     </nav>
@@ -120,6 +125,13 @@
         <li><label class="thrust"><span class="thrust__label">Throttle <output data-thrust-num>30%</output></span><input class="snd__range thrust__range" type="range" min="0" max="100" step="1" value="30" data-thrust aria-label="Thrust"></label></li>
         <li><button class="ch ch--descend" type="button" data-nav-open aria-controls="nav-plot"><span class="ch__no">Red button</span>Plot a course</button></li>
         <li><button class="ch ch--deck" type="button" data-deck="lounge"><span class="ch__no">Down the stairs</span>Lounge</button></li>
+      </ul>
+    </nav>
+
+    <nav class="channels-bar studio-bar" aria-label="Studio controls">
+      <ul>
+        <li><button class="ch" type="button" data-daw-open aria-controls="daw"><span class="ch__no">Laptop</span>Open NIGHTSHIFT</button></li>
+        <li><button class="ch ch--deck" type="button" data-studio-leave><span class="ch__no">Side door</span>Lounge</button></li>
       </ul>
     </nav>
 
@@ -319,6 +331,9 @@
       </div>
     </section>
 
+    <!-- NIGHTSHIFT, the studio laptop's music app (built by js/daw.js) -->
+    <section class="daw" id="daw" data-daw tabindex="-1" aria-label="NIGHTSHIFT music app" hidden></section>
+
     <!-- The tape deck's holographic player: our controls, Spotify's embed underneath -->
     <svg class="holo-beam" data-holo-beam hidden aria-hidden="true"><polygon points="0,0"/><line/><line/><line/><line/><line/></svg>
     <section class="holo" id="holo" data-holo tabindex="-1" aria-labelledby="holo-title" hidden>
@@ -349,7 +364,7 @@
       </div>
     </section>
 
-    <p class="lounge__hint" data-hint aria-hidden="true">Drag to look around. Click a monitor, the arcade, or the door up the stairs.</p>
+    <p class="lounge__hint" data-hint aria-hidden="true">Drag to look around. Click a monitor, the arcade, the side door, or the door up the stairs.</p>
   </main>
 </body>
 </html>

@@ -153,7 +153,10 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
   wall(7.5 - vz1, 8, -8, 4, (7.5 + vz1) / 2, Math.PI / 2);
   wall(vlen, vy0, -8, vy0 / 2, vzc, Math.PI / 2);
   wall(vlen, 8 - vy1, -8, (8 + vy1) / 2, vzc, Math.PI / 2);
-  wall(15, 8, 8, 4, 1, -Math.PI / 2);
+  // Right wall, built around the studio doorway (z -2.65..-0.75, y 0..3.15)
+  wall(-2.65 - WZ, 8, 8, 4, (WZ - 2.65) / 2, -Math.PI / 2);
+  wall(8.5 + 0.75, 8, 8, 4, (8.5 - 0.75) / 2, -Math.PI / 2);
+  wall(1.9, 8 - 3.15, 8, (8 + 3.15) / 2, -1.7, -Math.PI / 2);
   // Ceiling and front wall close the room. Both face inward only, so from the
   // cutaway camera outside they vanish, but looking back from the stairs or the
   // cockpit door the lounge is a sealed compartment, not an open box in space.
@@ -353,14 +356,31 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
     [a, b].forEach((x) => rod(V(x, topY, topZ - 0.2), V(x, topY + 1.0, topZ - 0.2), 0.025, railMat));
   });
 
+  // The studio door: a frame round the opening and a panel that slides into the wall
   const door = new THREE.Group();
-  rbox(2.4, 3.4, 0.2, 0.1, hullMid, 0, 1.7, 0, door);
-  box(1.9, 2.9, 0.1, hullDark, 0, 1.7, 0.1, door);
-  box(1.9, 0.08, 0.02, mat('--amber', 0.6, 0.2), 0, 1.7, 0.16, door);
-  box(0.25, 0.12, 0.05, red, 0, 3.6, 0.12, door).castShadow = false;
+  box(0.25, 3.4, 0.3, hullMid, -1.075, 1.7, 0, door);
+  box(0.25, 3.4, 0.3, hullMid, 1.075, 1.7, 0, door);
+  box(2.4, 0.3, 0.3, hullMid, 0, 3.3, 0, door);
+  const studioLampM = new THREE.MeshBasicMaterial({ color: color('--bebop-red'), toneMapped: false });
+  box(0.25, 0.12, 0.05, studioLampM, 0, 3.6, 0.12, door).castShadow = false;
+  const studioPanel = new THREE.Group();
+  box(1.9, 3.1, 0.1, hullDark, 0, 1.55, 0, studioPanel);
+  box(1.9, 0.08, 0.02, mat('--amber', 0.6, 0.2), 0, 1.55, 0.06, studioPanel);
+  box(1.2, 0.3, 0.02, mat('--soot', 0.6, 0.2), 0, 2.4, 0.06, studioPanel);
+  door.add(studioPanel);
   door.position.set(7.9, 0, -1.7);
   door.rotation.y = -Math.PI / 2;
   scene.add(door);
+  const studioPad = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 3.6), new THREE.MeshBasicMaterial({ visible: false }));
+  studioPad.position.set(0, 1.8, 0.25);
+  door.add(studioPad);
+  let studioOpen = 0, studioGoal = 0;
+  live((t, dt) => {
+    studioOpen += Math.sign(studioGoal - studioOpen) * Math.min(Math.abs(studioGoal - studioOpen), dt / (motion() ? 0.7 : 0.01));
+    const k = studioOpen < 0.5 ? 2 * studioOpen * studioOpen : 1 - Math.pow(-2 * studioOpen + 2, 2) / 2;
+    studioPanel.position.x = k * 2.0;   // into the wall
+    studioLampM.color.copy(color(studioOpen > 0.5 ? '--neon' : '--bebop-red'));
+  });
 
   box(1.3, 0.62, 1.0, hullDark, 0.0, 0.31, -2.2);              // crate for the fourth monitor
   // Stacked cargo by the door
@@ -956,6 +976,8 @@ export function buildWorld({ scene, renderer, token, color, box, rbox, rod, canv
     setDoor(open) { doorGoal = open ? 1 : 0; },
     pokeDog() { happy = 2.5; },
     clockHits,
+    studioDoorHits: [studioPad],
+    setStudioDoor(open) { studioGoal = open ? 1 : 0; },
     setClockHot(v) { clockHot = v; },
     cycleClock() { clockMode = (clockMode + 1) % 3; glitch = 1; drawClock(performance.now()); },
   };

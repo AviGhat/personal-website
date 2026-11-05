@@ -9,6 +9,8 @@ import { buildCamp } from './camp.js';
 import { buildCity } from './city.js';
 import { createNav } from './nav.js';
 import { createScope } from './scope.js';
+import { buildStudio } from './studio.js';
+import { createDaw } from './daw.js';
 
 /* ==========================================================
    Off Duty: a ship's lounge with four CRT monitors, and a
@@ -50,6 +52,10 @@ const navOpenButtons = [...document.querySelectorAll('[data-nav-open]')];
 const bountyButtons = [...document.querySelectorAll('[data-bounty]')];
 const navPanel = document.querySelector('[data-nav]');
 const scopePanel = document.querySelector('[data-scope]');
+const dawPanel = document.querySelector('[data-daw]');
+const studioButtons = [...document.querySelectorAll('[data-studio]')];
+const dawButtons = [...document.querySelectorAll('[data-daw-open]')];
+const studioLeaveButtons = [...document.querySelectorAll('[data-studio-leave]')];
 const signalButtons = [...document.querySelectorAll('[data-signal]')];
 const liftoffButtons = [...document.querySelectorAll('[data-liftoff]')];
 const reentryHeat = document.querySelector('[data-reentry-heat]');
@@ -63,6 +69,7 @@ const CAMP = 7;    // the campfire CRT, Earthside
 const NAV = 8;     // the nav plot behind the red button
 const CITY = 9;    // the street terminal in Tijuana, on Mars
 const SCOPE = 10;  // the telescope at the back of the cockpit
+const DAW = 11;    // NIGHTSHIFT on the studio laptop
 const onBridge = (i) => i === ABOUT || i === DECK || i === NAV || i === SCOPE;
 const chButton = (i) => chButtons.find((b) => Number(b.dataset.channel) === i);
 
@@ -95,7 +102,7 @@ const CHANNELS = [
 
 let current = -1;
 let opener = null;
-let mode = 'lounge';   // lounge | transit | cockpit | descent (the trip either way) | ground
+let mode = 'lounge';   // lounge | transit | cockpit | descent (the trip either way) | ground | studio
 let place = 'earth';   // where the ship sets down: earth | mars
 let navPick = null;    // a planet clicked in the canopy, preselected in the nav plot
 
@@ -103,6 +110,15 @@ function showTerminal(i) {
   if (i === DECK) { tape.show(); return; }
   if (i === NAV) { nav.show(navPick); navPick = null; return; }
   if (i === SCOPE) { scope.show(); return; }
+  if (i === DAW) {
+    dawPanel.hidden = false;
+    dawPanel.classList.remove('is-open');
+    void dawPanel.offsetWidth;
+    dawPanel.classList.add('is-open');
+    daw.open();
+    dawPanel.focus({ preventScroll: true });
+    return;
+  }
   if (i === ARCADE) {
     cabPanel.hidden = false;
     game.open();
@@ -122,6 +138,8 @@ function hideTerminal() {
   tape.hide();
   nav.hide();
   scope.hide();
+  if (!dawPanel.hidden) daw.close();
+  dawPanel.hidden = true;
   game.close();
   cabPanel.hidden = true;
   tv.classList.remove('is-open');
@@ -149,6 +167,13 @@ const nav = createNav(navPanel, {
 });
 
 const scope = createScope(scopePanel);
+// While NIGHTSHIFT plays, the room's ON AIR light comes on and the site's loop steps aside
+const daw = createDaw(dawPanel, {
+  onPlayChange: (on) => {
+    if (scene3d) scene3d.setOnAir(on);
+    try { if (window.agSound && window.agSound.hold) window.agSound.hold(on); } catch (e) { /* ignore */ }
+  },
+});
 
 let scene3d = null;
 try {
@@ -159,7 +184,9 @@ try {
 }
 
 function open(i, from) {
-  if (i === current && !(i === DECK ? holo : i === ARCADE ? cabPanel : i === NAV ? navPanel : i === SCOPE ? scopePanel : tv).hidden) return;
+  if (i === current && !(i === DECK ? holo : i === ARCADE ? cabPanel : i === NAV ? navPanel : i === SCOPE ? scopePanel : i === DAW ? dawPanel : tv).hidden) return;
+  // The laptop is only in the studio, and the studio has nothing else to open
+  if ((mode === 'studio') !== (i === DAW)) return;
   // On the ground only that site's terminal is in reach; up on the ship, neither is
   const site = place === 'mars' ? CITY : CAMP;
   if ((mode === 'ground') !== (i === CAMP || i === CITY) || ((i === CAMP || i === CITY) && i !== site)) return;
@@ -167,7 +194,7 @@ function open(i, from) {
   if (scene3d && onBridge(i) && mode === 'lounge') { goCockpit(() => open(i, from)); return; }
   if (scene3d && !onBridge(i) && mode === 'cockpit') { goLounge(() => open(i, from)); return; }
   if (mode === 'transit') return;
-  opener = from || chButton(i) || (i === DECK ? tapeButtons[0] : i === CAMP ? signalButtons[0] : i === CITY ? bountyButtons[0] : i === NAV ? navOpenButtons[0] : pilotButtons[0]);
+  opener = from || chButton(i) || (i === DECK ? tapeButtons[0] : i === CAMP ? signalButtons[0] : i === CITY ? bountyButtons[0] : i === NAV ? navOpenButtons[0] : i === DAW ? dawButtons[0] : pilotButtons[0]);
   current = i;
   markChannel(i);
   hideTerminal();
@@ -207,6 +234,23 @@ function goLounge(done) {
   scene3d.toLounge(() => { setMode('lounge'); if (done) done(); });
 }
 
+// Through the side door into the studio, and back out
+function goStudio() {
+  if (mode !== 'lounge') return;
+  settle();
+  if (hint) hint.classList.add('is-gone');
+  if (!scene3d) { setMode('studio'); return; }
+  setMode('transit');
+  scene3d.toStudio(() => setMode('studio'));
+}
+function leaveStudio(done) {
+  if (mode !== 'studio') return;
+  settle();
+  if (!scene3d) { setMode('lounge'); if (done) done(); return; }
+  setMode('transit');
+  scene3d.fromStudio(() => { setMode('lounge'); if (done) done(); });
+}
+
 // Down to Earth from the cockpit, and back up again from the campsite
 function descend(dest) {
   if (mode !== 'cockpit' || !scene3d) return;
@@ -223,6 +267,10 @@ function liftOff() {
 }
 
 chButtons.forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.channel), b)));
+studioButtons.forEach((b) => b.addEventListener('click', goStudio));
+dawButtons.forEach((b) => b.addEventListener('click', () => open(DAW, b)));
+studioLeaveButtons.forEach((b) => b.addEventListener('click', () => leaveStudio()));
+dawPanel.addEventListener('click', (e) => { if (e.target.closest('[data-d="close"]')) close(); });
 navOpenButtons.forEach((b) => b.addEventListener('click', () => open(NAV, b)));
 bountyButtons.forEach((b) => b.addEventListener('click', () => open(CITY, b)));
 navPanel.querySelector('[data-nav-close]').addEventListener('click', close);
@@ -256,6 +304,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (current >= 0) { e.preventDefault(); close(); }
   else if (mode === 'cockpit') { e.preventDefault(); goLounge(); }
+  else if (mode === 'studio') { e.preventDefault(); leaveStudio(); }
 });
 
 // A link straight to the bridge: hobbies.html#cockpit
@@ -267,7 +316,7 @@ if (location.hash === '#cockpit') {
 }
 // Editing the address (or following an in-page #cockpit link) moves between decks too
 window.addEventListener('hashchange', () => {
-  if (mode === 'ground' || mode === 'descent') return;   // away from the lounge decks
+  if (mode === 'ground' || mode === 'descent' || mode === 'studio') return;   // away from the lounge decks
   if (location.hash === '#cockpit') goCockpit();
   else if (mode === 'cockpit') goLounge();
 });
@@ -339,6 +388,7 @@ function buildScene() {
   const camp = buildCamp({ token, color, small: small(), motion, canvasTexture });
   const city = buildCity({ token, color, small: small(), motion, canvasTexture });
   const grounds = { earth: camp, mars: city };
+  const studio = buildStudio({ scene, token, color, box, rbox, rod, canvasTexture, small: small(), motion });
   let ground = camp;   // the landing site in use
   let active = scene;   // the ship, or the landing site once down
   let trip = null;      // the descent or lift-off in progress
@@ -543,7 +593,7 @@ function buildScene() {
     if (focused >= 0 && !tween) Object.assign(view, focusPose(focused));
   };
 
-  const screenOf = (i) => (i === CAMP ? camp.crtScreen : i === CITY ? city.crtScreen : i === ARCADE ? arcade.screen : i === DECK ? cockpit.tapeAnchor : i === ABOUT ? cockpit.aboutScreen : monitors[i].screen);
+  const screenOf = (i) => (i === DAW ? studio.laptopScreen : i === CAMP ? camp.crtScreen : i === CITY ? city.crtScreen : i === ARCADE ? arcade.screen : i === DECK ? cockpit.tapeAnchor : i === ABOUT ? cockpit.aboutScreen : monitors[i].screen);
   const focusPose = (i) => {
     const s = screenOf(i);
     const center = new THREE.Vector3();
@@ -589,9 +639,16 @@ function buildScene() {
     const p = ground.pose(camera.aspect < 1);
     return { pos: p.pos.clone().sub(p.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(p.target), target: p.target };
   };
-  const restPose = () => (deck === 'cockpit' || deck === 'descent' ? seatPose() : deck === 'ground' ? campPose() : homePose());
+  const studioPose = () => {
+    const p = studio.pose(camera.aspect < 1);
+    return { pos: p.pos.clone().sub(p.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(p.target), target: p.target };
+  };
+  const restPose = () => (deck === 'cockpit' || deck === 'descent' ? seatPose() : deck === 'ground' ? campPose() : deck === 'studio' ? studioPose() : homePose());
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  // Lounge to the side door and into the studio
+  const STUDIO_PATH = [V(5.0, 2.6, 0.8), V(7.0, 2.3, -1.7), V(9.0, 2.4, -1.4)];
+  const STUDIO_AIM = [V(8.0, 1.9, -1.7), V(11, 1.7, -2.2), V(13, 1.3, -4.8)];
   const STAIR_PATH = [V(2.3, 2.5, 1.4), V(2.3, 3.6, -2.6), V(2.3, 4.45, -5.6), V(2.1, 4.4, -8.6)];
   const STAIR_AIM = [V(2.3, 2.6, -4.0), V(2.3, 4.4, -7.5), V(2.2, 4.4, -11), V(2.0, 4.35, -16)];
 
@@ -625,12 +682,14 @@ function buildScene() {
     if (trip) return null;
     if (deck === 'ground') return hits(ground.hits.crt) ? { kind: 'crt' } : hits(ground.hits.fire) ? { kind: 'fire' } : hits(ground.hits.ship) ? { kind: 'ship' } : null;
     if (deck === 'cockpit') return hits(cockpit.aboutHits) ? { kind: 'about' } : hits(cockpit.tapeHits) ? { kind: 'tape' } : hits(cockpit.throttleHits) ? { kind: 'throttle' } : hits(cockpit.descentHits) ? { kind: 'descent' } : hits(cockpit.scopeHits) ? { kind: 'scope' } : planetUnder();
+    if (deck === 'studio') return hits(studio.hits.laptop) ? { kind: 'laptop' } : null;
     if (deck !== 'lounge') return null;
     const i = pick();
     if (i >= 0) return { kind: 'monitor', i };
     if (hits(arcade.hits)) return { kind: 'arcade' };
     if (hits(world.clockHits)) return { kind: 'clock' };
     if (hits(world.doorHits)) return { kind: 'door' };
+    if (hits(world.studioDoorHits)) return { kind: 'studioDoor' };
     if (hits(world.dogHits)) return { kind: 'dog' };
     return null;
   };
@@ -660,8 +719,8 @@ function buildScene() {
       const dx = e.clientX - drag.x;
       const dy = e.clientY - drag.y;
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.moved = true;
-      if (drag.moved && focused < 0 && (deck === 'lounge' || deck === 'ground')) {
-        const lim = deck === 'ground' ? 0.85 : 0.5;
+      if (drag.moved && focused < 0 && (deck === 'lounge' || deck === 'ground' || deck === 'studio')) {
+        const lim = deck === 'ground' ? 0.85 : deck === 'studio' ? 0.6 : 0.5;
         yawGoal = THREE.MathUtils.clamp(drag.yaw - dx * 0.004, -lim, lim);
       }
       if (drag.moved && focused < 0 && deck === 'cockpit') {
@@ -685,6 +744,7 @@ function buildScene() {
     cockpit.setDescentHot(!!t && t.kind === 'descent');
     cockpit.setScopeHot(!!t && t.kind === 'scope');
     ground.setCrtHot(!!t && t.kind === 'crt');
+    studio.setHot(!!t && t.kind === 'laptop');
     chButtons.forEach((b) => b.classList.toggle('is-hot', Number(b.dataset.channel) === (t && t.kind === 'arcade' ? ARCADE : hovered)));
   });
   el.addEventListener('pointerup', (e) => {
@@ -705,6 +765,8 @@ function buildScene() {
     else if (t && t.kind === 'about') { sound('zap'); open(ABOUT, pilotButtons[0]); }
     else if (t && t.kind === 'tape') { sound('zap'); open(DECK, tapeButtons[0]); }
     else if (t && t.kind === 'door') goCockpit();
+    else if (t && t.kind === 'studioDoor') goStudio();
+    else if (t && t.kind === 'laptop') { sound('zap'); open(DAW, dawButtons[0]); }
     else if (t && t.kind === 'dog') { sound('buzz'); world.pokeDog(); }
     else if (focused >= 0) close();
   });
@@ -805,6 +867,7 @@ function buildScene() {
     if (active === ground.scene) ground.update(t, dt);
     else {
       world.update(t, dt);
+      studio.update(t, dt);
       arcade.update(t);
       hyper.update(t, dt);
       cockpit.update(t, dt);
@@ -825,7 +888,7 @@ function buildScene() {
       view.target.lerpVectors(tween.from.target, tween.to.target, k);
       if (p >= 1) { const done = tween.done; tween = null; if (done) done(); }
     } else if (focused < 0) {
-      if (deck === 'lounge' || deck === 'ground') yaw += (yawGoal - yaw) * 0.08;
+      if (deck === 'lounge' || deck === 'ground' || deck === 'studio') yaw += (yawGoal - yaw) * 0.08;
       const rp = restPose();
       view.pos.copy(rp.pos);
       view.target.copy(rp.target);
@@ -835,7 +898,7 @@ function buildScene() {
     if (motion() && !tween) {
       if (deck === 'cockpit' && focused < 0) {
         camera.position.y += Math.sin(t * 0.0016) * 0.008;   // the hum of the hull
-      } else if (deck === 'lounge' || deck === 'ground') {
+      } else if (deck === 'lounge' || deck === 'ground' || deck === 'studio') {
         // A slow drift and a little pointer parallax keep the room alive
         camera.position.x += Math.sin(t * 0.00023) * 0.08 + pointer.x * (focused < 0 ? 0.35 : 0.05);
         camera.position.y += Math.sin(t * 0.00031) * 0.05 - pointer.y * (focused < 0 ? 0.2 : 0.03);
@@ -876,6 +939,7 @@ function buildScene() {
       else {
         monitors.forEach((m, i) => drawScreen(m, i, t));
         world.redraw(t);
+        studio.redraw(t, daw.snapshot());
         arcade.redraw(t);
         cockpit.redraw(t);
       }
@@ -954,6 +1018,31 @@ function buildScene() {
       walk([camera.position.clone(), ...STAIR_PATH.slice().reverse(), rest.pos], [actual.clone(), V(2.3, 4.4, -6), V(2.3, 3.0, -2), V(1.5, 1.6, 0.5), V(0.5, 1.3, -0.5), rest.target], 3400, () => {
         deck = 'lounge';
         world.setDoor(false);
+        sound('slide');
+        if (done) done();
+      });
+    },
+    setOnAir(on) { studio.setLive(on); },
+    toStudio(done) {
+      focused = -1;
+      deck = 'transit';
+      world.setStudioDoor(true);
+      sound('slide');
+      const end = studio.pose(camera.aspect < 1);
+      walk([camera.position.clone(), ...STUDIO_PATH, end.pos], [actual.clone(), ...STUDIO_AIM, end.target], 3000, () => {
+        deck = 'studio';
+        yaw = yawGoal = 0;
+        if (done) done();
+      });
+    },
+    fromStudio(done) {
+      focused = -1;
+      deck = 'transit';
+      yaw = yawGoal = 0;
+      const rest = homePose();
+      walk([camera.position.clone(), ...STUDIO_PATH.slice().reverse(), rest.pos], [actual.clone(), V(7, 1.9, -1.7), V(3, 1.6, -0.5), V(0.5, 1.3, -0.8), rest.target], 3000, () => {
+        deck = 'lounge';
+        world.setStudioDoor(false);
         sound('slide');
         if (done) done();
       });

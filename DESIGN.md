@@ -125,4 +125,13 @@ Boot sequence (first visit per session), dot-matrix name that reacts to the poin
   - Parked cars line the kerbs, a low sun disc sits in the haze, and rust dust drifts through.
   - The ship stands on a floodlit plaza beside the crossing, inside an amber landing ring, nose toward the street.
   - A street terminal on the plaza corner shows BOUNTY BOARD. Clicking it (or **Bounty board**) opens terminal 9, which lists the three projects with links to the full files, the live Discover Me site and GitHub.
-- Modes are lounge, transit, cockpit, descent (either direction) and ground. `data-place` (earth or mars) on `.lounge` shows that site's intro and controls (`data-place-only`).
+- **The studio** (`js/studio.js`): the right-hand wall of the lounge has a side door with a red lamp. Clicking it (or **CH 06 / Studio** in the bar) slides the panel back, turns the lamp cyan, and walks the camera through into a small producer room. The room has a wood floor, acoustic foam, a desk with a laptop, MIDI keys, monitor speakers, headphones and a mug, a chair, a couch, a guitar on a stand, a record shelf, plants, a floor lamp, and an ON AIR sign that lights while something plays. The laptop screen mirrors the session live: the step grid, the playhead and the BPM. Drag to look around. Esc (or **Back to the lounge**) walks you back out and the door shuts.
+- **NIGHTSHIFT** (`js/daw.js`, `.daw`): the laptop opens an original step-sequencer DAW in an amber-edged panel, running on its own Web Audio graph.
+  - Transport: play/stop (Space), record from the keyboard, BPM (50–200, nudge or tap tempo), swing, 16 or 32 steps, key and scale (major, minor, Dorian, Phrygian, Mixolydian, harmonic minor, pentatonics, blues), a metronome click, master volume and a level meter.
+  - Channel rack: six synthesised drums (kick, snare, clap, closed and open hat, rim) and four synths (bass, lead, pad, keys), each with mute, solo, volume and a step grid.
+  - Piano roll for the selected synth: rows are notes in the current key and scale, the root is marked, and changing the scale re-labels the notes. Click to place a note, and click again to hold it.
+  - Instrument panel: waveform, octave, filter cutoff and resonance, attack and release, detune, and chord mode for the pad.
+  - Mixer: one strip per channel with a level meter, volume, pan, reverb and delay sends, and mute and solo.
+  - Three demo patterns to start from, Clear, and **Render WAV**, which bounces two loops offline and offers a Save WAV link. The session is saved to localStorage (`ag-daw`). While it plays, the site loop steps aside.
+  - On phones the whole panel scrolls, so the grid gets proper height, and the instrument controls sit under it.
+- Modes are lounge, transit, cockpit, descent (either direction), ground and studio. `data-place` (earth or mars) on `.lounge` shows that site's intro and controls (`data-place-only`).
