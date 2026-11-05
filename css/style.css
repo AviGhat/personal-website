@@ -91,6 +91,25 @@
   --seat-pad:      #C9C2AE;
   --floor-light:   #6FC3FF;
   --leaf:          #3F6E46;   /* lounge plants */
+  /* Mars, and Tijuana under its dusk */
+  --mars-dark:     #4A2418;
+  --mars-rust:     #9C4A2A;
+  --mars-dust:     #C98552;
+  --mars-sky:      #8E4F33;
+  --mars-haze:     #5C3324;
+  /* The ship seen from outside */
+  --ship-tan:      #A08A6E;
+  --ship-tan-dark: #6E5C48;
+  --ship-deck:     #59616B;
+  /* Earthside campsite */
+  --sky-dusk:      #142A3A;
+  --grass:         #2F4A2C;
+  --grass-light:   #4C6B3A;
+  --pine:          #23402C;
+  --pine-light:    #355C3B;
+  --bark:          #4A3322;
+  --dirt:          #4A3626;
+  --stone:         #6E6A62;
   --leaf-light:    #6E9A4E;
   /* Arcade cabinet: Road Fighter's fighters */
   --fx-skin:       #C68A5C;
@@ -1698,7 +1717,6 @@ html.fx-off { scroll-behavior: auto; }
 .lounge[data-mode="transit"] .channels-bar { display: none; }
 .lounge.is-tuned .lounge__intro--cockpit { opacity: 0; }
 
-.bridge-bar ul { grid-template-columns: repeat(4, minmax(0, 14rem)); }
 /* The throttle's slider twin in the bridge bar */
 .thrust {
   display: flex; flex-direction: column; justify-content: center;
@@ -1864,9 +1882,6 @@ html.fx-off { scroll-behavior: auto; }
 .holo-beam polygon { fill: var(--holo-beam); }
 .holo-beam line { stroke: var(--holo-line); stroke-width: 1; stroke-dasharray: 2 5; opacity: 0.6; }
 
-@media (max-width: 767px), (max-aspect-ratio: 1/1) {
-  .bridge-bar ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 .fx-off .holo.is-open, .fx-off .holo__body > * { animation: none; }
 .no-webgl .holo { position: static; translate: none; width: auto; max-height: none; margin-bottom: var(--s-3); }
 .no-webgl .holo-beam { display: none; }
@@ -1946,7 +1961,142 @@ html.fx-off { scroll-behavior: auto; }
 @media (max-width: 767px) {
   .channels-bar:not(.bridge-bar) ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lounge { --chbar: 116px; }
-  .lounge[data-mode="cockpit"] { --chbar: 116px; }
+  .lounge[data-mode="cockpit"] { --chbar: 150px; }   /* five controls in two rows, the throttle doubled */
 }
 .fx-off .cab:not([hidden]) { animation: none; }
 .no-webgl .cab { position: static; translate: none; width: auto; max-height: none; margin-bottom: var(--s-3); }
+
+/* ---------- The trip down to Earth, and the campsite ---------- */
+
+.reentry { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.reentry > div { position: absolute; inset: 0; opacity: 0; }
+.reentry__heat { background: var(--bebop-red); mix-blend-mode: screen; }
+.reentry__white { background: var(--cream); }
+
+.descent-status {
+  position: absolute; z-index: 2; left: 50%; top: calc(var(--bar-h) + var(--s-3));
+  translate: -50% 0;
+  padding: 0.3rem 0.8rem;
+  background: var(--panel-veil); border: 1px solid var(--amber);
+  font-family: var(--f-crt); font-size: 1.3rem; letter-spacing: 0.06em; color: var(--amber);
+  white-space: nowrap; pointer-events: none;
+}
+.descent-status:empty { display: none; }
+
+.ch--descend { background: var(--bebop-red); border-color: var(--bebop-red); color: var(--space-black); }
+.ch--descend .ch__no { color: var(--space-black); }
+
+.lounge__intro--ground, .ground-bar { display: none; }
+.lounge[data-mode="ground"] .lounge__intro--ground,
+.lounge[data-mode="ground"] .ground-bar { display: block; }
+.lounge[data-mode="ground"] .lounge__intro--lounge,
+.lounge[data-mode="ground"] .channels-bar:not(.ground-bar),
+.lounge[data-mode="descent"] .lounge__intro,
+.lounge[data-mode="descent"] .channels-bar,
+.lounge[data-mode="ground"] .lounge__hint,
+.lounge[data-mode="descent"] .lounge__hint { display: none; }
+/* Earth or Mars: only the landing site's own intro and controls */
+.lounge[data-place="earth"] [data-place-only="mars"],
+.lounge[data-place="mars"] [data-place-only="earth"] { display: none !important; }
+.lounge.is-tuned .lounge__intro--ground { opacity: 0; }
+.lounge__intro--ground { top: calc(var(--bar-h) + var(--s-3)); bottom: auto; }
+.channels-bar.ground-bar ul { grid-template-columns: repeat(2, minmax(0, 14rem)); }
+.bridge-bar ul { grid-template-columns: repeat(5, minmax(0, 13rem)); max-width: 68rem; }
+
+@media (max-width: 767px) {
+  .channels-bar.ground-bar ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lounge[data-mode="ground"] { --chbar: 60px; }
+  /* The bridge's five controls in two rows: the throttle takes a double cell */
+  .bridge-bar ul { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: dense; }
+  .bridge-bar li:has(.thrust) { grid-column: span 2; }
+  .descent-status { font-size: 1.05rem; }
+}
+
+/* ---------- Nav plot: the course menu behind the red button ---------- */
+
+.navi {
+  position: absolute; z-index: 3;
+  right: max(var(--gutter), 5vw); top: 50%; translate: 0 -50%;
+  width: min(36rem, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100svh - var(--bar-h) - 2 * var(--s-3));
+  overflow-y: auto;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, var(--screen-scan) 2px 3px), var(--tv-glass);
+  border: 1px solid var(--bebop-red);
+  outline: none;
+}
+.navi[hidden] { display: none; }
+.fx-on .navi.is-open { animation: tv-on 0.45s steps(4, end); }
+.navi__head {
+  display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--bebop-red);
+  font-size: var(--t-label); letter-spacing: 0.14em; text-transform: uppercase;
+}
+.navi__signal { display: flex; align-items: center; gap: 0.5rem; color: var(--bebop-red); }
+.navi__body { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: 1rem; padding: 1rem; }
+.navi__radar { width: 100%; height: auto; aspect-ratio: 1; border: 1px solid var(--rule); background: var(--screen-bg); }
+.navi__title { font-family: var(--f-display); font-weight: 700; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 0.6rem; }
+.navi__dest {
+  display: grid; grid-template-columns: 1fr auto; column-gap: 0.75rem; align-items: baseline;
+  width: 100%; min-height: 56px; margin-bottom: 0.5rem; padding: 0.55rem 0.75rem; text-align: left;
+  background: var(--panel-veil); border: 1px solid var(--rule); color: var(--ink);
+}
+.navi__name { font-family: var(--f-display); font-weight: 700; font-size: 0.95rem; text-transform: uppercase; }
+.navi__where { grid-column: 1; font-size: var(--t-label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+.navi__dist { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-family: var(--f-crt); font-size: 1.15rem; color: var(--amber); }
+.navi__dest[aria-checked="true"] { border-color: var(--amber); box-shadow: inset 4px 0 0 var(--amber); }
+.navi__dest:hover, .navi__dest:focus-visible { background: var(--phosphor); color: var(--space-black); border-color: var(--phosphor); }
+.navi__dest:hover :is(.navi__where, .navi__dist), .navi__dest:focus-visible :is(.navi__where, .navi__dist) { color: var(--space-black); }
+.navi__go {
+  width: 100%; min-height: 52px; margin-top: 0.4rem;
+  background: var(--bebop-red); border: 0; color: var(--space-black);
+  font-family: var(--f-display); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.navi__go:hover, .navi__go:focus-visible { background: var(--phosphor); }
+.navi__scope {
+  width: 100%; min-height: 44px; margin-top: 0.4rem;
+  background: none; border: 1px solid var(--neon); color: var(--neon);
+  font-size: var(--t-label); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.navi__scope:hover, .navi__scope:focus-visible { background: var(--neon); color: var(--space-black); }
+@media (max-width: 767px), (max-aspect-ratio: 1/1) {
+  .navi { top: auto; bottom: calc(var(--s-3) + var(--chbar, 60px)); right: var(--gutter); left: var(--gutter); width: auto; translate: none; max-height: 70svh; }
+  .navi__body { grid-template-columns: 8rem minmax(0, 1fr); gap: 0.75rem; padding: 0.75rem; }
+}
+.fx-off .navi.is-open { animation: none; }
+
+/* ---------- Telescope: an eyepiece view of the rest of the system ---------- */
+
+.scope {
+  position: absolute; z-index: 3;
+  right: max(var(--gutter), 5vw); top: 50%; translate: 0 -50%;
+  width: min(40rem, calc(100% - 2 * var(--gutter)));
+  max-height: calc(100svh - var(--bar-h) - 2 * var(--s-3));
+  overflow-y: auto;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, var(--screen-scan) 2px 3px), var(--tv-glass);
+  border: 1px solid var(--neon);
+  outline: none;
+}
+.scope[hidden] { display: none; }
+.fx-on .scope.is-open { animation: tv-on 0.45s steps(4, end); }
+.scope .navi__head { border-bottom-color: var(--neon); }
+.scope .navi__signal { color: var(--neon); }
+.scope__body { display: grid; grid-template-columns: 16rem minmax(0, 1fr); gap: 1rem; padding: 1rem; }
+.scope__view { width: 100%; height: auto; aspect-ratio: 1; border-radius: 50%; background: var(--space-black); }
+.scope__name { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.2rem, 1rem + 1vw, 1.7rem); text-transform: uppercase; }
+.scope__dist { margin-top: 0.2rem; font-family: var(--f-crt); font-size: 1.2rem; color: var(--amber); }
+.scope__note { margin-top: 0.6rem; font-size: var(--t-small); line-height: 1.55; color: var(--bone); }
+.scope__step { display: flex; gap: 0.4rem; margin-top: 0.9rem; }
+.scope__list { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.8rem; }
+.scope__chip {
+  min-height: 44px; padding: 0 0.6rem;
+  background: none; border: 1px solid var(--rule); color: var(--ink);
+  font-size: var(--t-label); letter-spacing: 0.1em; text-transform: uppercase;
+}
+.scope__chip[aria-pressed="true"] { border-color: var(--neon); color: var(--neon); }
+.scope__chip:hover, .scope__chip:focus-visible { background: var(--neon); border-color: var(--neon); color: var(--space-black); }
+@media (max-width: 767px), (max-aspect-ratio: 1/1) {
+  .scope { top: auto; bottom: calc(var(--s-3) + var(--chbar, 60px)); right: var(--gutter); left: var(--gutter); width: auto; translate: none; max-height: 72svh; }
+  .scope__body { grid-template-columns: 9rem minmax(0, 1fr); gap: 0.75rem; padding: 0.75rem; }
+  .scope__note { font-size: 0.8rem; }
+}
+.fx-off .scope.is-open { animation: none; }
