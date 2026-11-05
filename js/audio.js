@@ -194,7 +194,8 @@
 
   /* ---------- Arcade cabinet: fight sounds ---------- */
 
-  // kind: 'hit' (a landed blow), 'heavy', 'block', 'whiff', 'ko', 'super', 'blip' (menus)
+  // kind: 'hit' (a landed blow), 'heavy', 'block', 'whiff', 'ko', 'super', 'blip' (menus),
+  // and for the ship: 'reentry' (the long roar coming down), 'thrust' (landing jets)
   function fx(kind) {
     if (!enabled || !live()) return;
     const t = ctx.currentTime;
@@ -208,6 +209,23 @@
       hiss(t, 0.05, 0.06, 'bandpass', 4200);
     } else if (kind === 'whiff') {
       hiss(t, 0.09, 0.05, 'bandpass', 1800);
+    } else if (kind === 'reentry') {
+      // Air building against the hull: low-passed noise swelling over ~8s, a deep rumble under it
+      const n = noiseSource(t, 9);
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(200, t);
+      lp.frequency.exponentialRampToValueAtTime(1600, t + 6);
+      lp.frequency.exponentialRampToValueAtTime(400, t + 8.8);
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.0001, t);
+      ng.gain.exponentialRampToValueAtTime(0.35, t + 5.5);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + 8.9);
+      n.connect(lp).connect(ng).connect(out);
+      tone('sawtooth', 38, 52, t + 2, 6.5, 0.12, 2.5);
+    } else if (kind === 'thrust') {
+      hiss(t, 2.8, 0.18, 'lowpass', 700);
+      tone('sawtooth', 70, 55, t, 2.8, 0.06, 0.3);
     } else if (kind === 'super') {
       // The flash: a charge sweeping up, a crack, then a low boom
       tone('sawtooth', 120, 1400, t, 0.5, 0.05, 0.02);

@@ -5,6 +5,10 @@ import { buildCockpit, buildHyperspace, THRUST_DEFAULT } from './cockpit.js';
 import { createTape } from './tape.js';
 import { createFighter } from './fighter.js';
 import { buildCabinet } from './arcade.js';
+import { buildCamp } from './camp.js';
+import { buildCity } from './city.js';
+import { createNav } from './nav.js';
+import { createScope } from './scope.js';
 
 /* ==========================================================
    Off Duty: a ship's lounge with four CRT monitors, and a
@@ -14,7 +18,9 @@ import { buildCabinet } from './arcade.js';
    door at the top of the stairs to climb into the pilot's seat,
    where the console monitor opens the pilot file (about me) and the
    tape deck projects a player for the Spotify playlist. Back in the
-   lounge, the arcade cabinet plays Road Fighter.
+   lounge, the arcade cabinet plays Road Fighter. The red button on the
+   console plots a course: down to Earth, to a campsite in the pines, or to
+   Mars, to downtown Tijuana.
    ========================================================== */
 
 const root = document.documentElement;
@@ -40,10 +46,24 @@ const tape = createTape(holo);
 const cabPanel = document.querySelector('[data-cab]');
 const game = createFighter(cabPanel.querySelector('[data-cab-canvas]'));
 const hint = document.querySelector('[data-hint]');
+const navOpenButtons = [...document.querySelectorAll('[data-nav-open]')];
+const bountyButtons = [...document.querySelectorAll('[data-bounty]')];
+const navPanel = document.querySelector('[data-nav]');
+const scopePanel = document.querySelector('[data-scope]');
+const signalButtons = [...document.querySelectorAll('[data-signal]')];
+const liftoffButtons = [...document.querySelectorAll('[data-liftoff]')];
+const reentryHeat = document.querySelector('[data-reentry-heat]');
+const reentryWhite = document.querySelector('[data-reentry-white]');
+const descentStatus = document.querySelector('[data-descent-status]');
+const fx = (kind) => { try { if (window.agSound && window.agSound.fx) window.agSound.fx(kind); } catch (e) { /* ignore */ } };
 const ABOUT = 4;   // the pilot file is the fifth terminal
 const DECK = 5;    // the tape deck's holo player; ABOUT and DECK live in the cockpit
 const ARCADE = 6;  // the lounge arcade cabinet
-const onBridge = (i) => i === ABOUT || i === DECK;
+const CAMP = 7;    // the campfire CRT, Earthside
+const NAV = 8;     // the nav plot behind the red button
+const CITY = 9;    // the street terminal in Tijuana, on Mars
+const SCOPE = 10;  // the telescope at the back of the cockpit
+const onBridge = (i) => i === ABOUT || i === DECK || i === NAV || i === SCOPE;
 const chButton = (i) => chButtons.find((b) => Number(b.dataset.channel) === i);
 
 /* ---------- Throttle: the lever, the Thrust slider and the keys all set this ---------- */
@@ -75,27 +95,33 @@ const CHANNELS = [
 
 let current = -1;
 let opener = null;
-let mode = 'lounge';   // lounge | transit | cockpit
+let mode = 'lounge';   // lounge | transit | cockpit | descent (the trip either way) | ground
+let place = 'earth';   // where the ship sets down: earth | mars
+let navPick = null;    // a planet clicked in the canopy, preselected in the nav plot
 
 function showTerminal(i) {
   if (i === DECK) { tape.show(); return; }
+  if (i === NAV) { nav.show(navPick); navPick = null; return; }
+  if (i === SCOPE) { scope.show(); return; }
   if (i === ARCADE) {
     cabPanel.hidden = false;
     game.open();
     cabPanel.focus({ preventScroll: true });
     return;
   }
-  hobbies.forEach((h, k) => { h.hidden = k !== i; });
-  tvLabel.textContent = i === ABOUT ? 'Bridge / Pilot file' : `CH ${String(i + 1).padStart(2, '0')} / Receiving`;
-  tv.classList.toggle('is-pilot', i === ABOUT);
+  hobbies.forEach((h) => { h.hidden = Number(h.dataset.hobby) !== i; });
+  tvLabel.textContent = i === ABOUT ? 'Bridge / Pilot file' : i === CAMP ? 'Earthside / Campfire CRT' : i === CITY ? 'Tijuana / Street terminal' : `CH ${String(i + 1).padStart(2, '0')} / Receiving`;
+  tv.classList.toggle('is-pilot', i === ABOUT || i === CAMP || i === CITY);   // no channel flipping on these
   tv.hidden = false;
   tv.classList.remove('is-open');
   void tv.offsetWidth;
   tv.classList.add('is-open');
-  hobbies[i].focus({ preventScroll: true });
+  hobbies.find((h) => Number(h.dataset.hobby) === i).focus({ preventScroll: true });
 }
 function hideTerminal() {
   tape.hide();
+  nav.hide();
+  scope.hide();
   game.close();
   cabPanel.hidden = true;
   tv.classList.remove('is-open');
@@ -109,12 +135,20 @@ function markChannel(i) {
 }
 function setMode(m) {
   mode = m;
-  lounge.dataset.mode = m;   // CSS swaps the intro and the button bars
+  lounge.dataset.mode = m;
+  lounge.dataset.place = place;   // CSS swaps the intro and the button bars
   const url = location.pathname + location.search + (m === 'cockpit' ? '#cockpit' : '');
   history.replaceState(null, '', url);
 }
 
 /* ---------- Three.js ---------- */
+
+const nav = createNav(navPanel, {
+  onCourse: (name) => { if (scene3d) scene3d.setCourse(name); },
+  onGo: (name) => descend(name),
+});
+
+const scope = createScope(scopePanel);
 
 let scene3d = null;
 try {
@@ -125,18 +159,21 @@ try {
 }
 
 function open(i, from) {
-  if (i === current && !(i === DECK ? holo : i === ARCADE ? cabPanel : tv).hidden) return;
+  if (i === current && !(i === DECK ? holo : i === ARCADE ? cabPanel : i === NAV ? navPanel : i === SCOPE ? scopePanel : tv).hidden) return;
+  // On the ground only that site's terminal is in reach; up on the ship, neither is
+  const site = place === 'mars' ? CITY : CAMP;
+  if ((mode === 'ground') !== (i === CAMP || i === CITY) || ((i === CAMP || i === CITY) && i !== site)) return;
   // Each terminal lives on its own deck: walk there first
   if (scene3d && onBridge(i) && mode === 'lounge') { goCockpit(() => open(i, from)); return; }
   if (scene3d && !onBridge(i) && mode === 'cockpit') { goLounge(() => open(i, from)); return; }
   if (mode === 'transit') return;
-  opener = from || chButton(i) || (i === DECK ? tapeButtons[0] : pilotButtons[0]);
+  opener = from || chButton(i) || (i === DECK ? tapeButtons[0] : i === CAMP ? signalButtons[0] : i === CITY ? bountyButtons[0] : i === NAV ? navOpenButtons[0] : pilotButtons[0]);
   current = i;
   markChannel(i);
   hideTerminal();
   if (hint) hint.classList.add('is-gone');
-  if (scene3d) scene3d.focus(i, () => showTerminal(i));
-  else showTerminal(i);
+  if (scene3d && i !== NAV && i !== SCOPE) scene3d.focus(i, () => showTerminal(i));
+  else showTerminal(i);   // the nav plot and the telescope open over the seat view, no camera move
 }
 function close() {
   if (current < 0) return;
@@ -170,7 +207,29 @@ function goLounge(done) {
   scene3d.toLounge(() => { setMode('lounge'); if (done) done(); });
 }
 
+// Down to Earth from the cockpit, and back up again from the campsite
+function descend(dest) {
+  if (mode !== 'cockpit' || !scene3d) return;
+  settle();
+  place = dest;
+  setMode('descent');
+  scene3d.descend(dest, () => setMode('ground'));
+}
+function liftOff() {
+  if (mode !== 'ground' || !scene3d) return;
+  settle();
+  setMode('descent');
+  scene3d.liftOff(() => setMode('cockpit'));
+}
+
 chButtons.forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.channel), b)));
+navOpenButtons.forEach((b) => b.addEventListener('click', () => open(NAV, b)));
+bountyButtons.forEach((b) => b.addEventListener('click', () => open(CITY, b)));
+navPanel.querySelector('[data-nav-close]').addEventListener('click', close);
+scopePanel.querySelector('[data-scope-close]').addEventListener('click', close);
+navPanel.querySelector('[data-scope-open]').addEventListener('click', (e) => open(SCOPE, e.currentTarget));
+signalButtons.forEach((b) => b.addEventListener('click', () => open(CAMP, b)));
+liftoffButtons.forEach((b) => b.addEventListener('click', liftOff));
 pilotButtons.forEach((b) => b.addEventListener('click', () => open(ABOUT, b)));
 tapeButtons.forEach((b) => b.addEventListener('click', () => open(DECK, b)));
 holo.querySelector('[data-holo-close]').addEventListener('click', close);
@@ -208,6 +267,7 @@ if (location.hash === '#cockpit') {
 }
 // Editing the address (or following an in-page #cockpit link) moves between decks too
 window.addEventListener('hashchange', () => {
+  if (mode === 'ground' || mode === 'descent') return;   // away from the lounge decks
   if (location.hash === '#cockpit') goCockpit();
   else if (mode === 'cockpit') goLounge();
 });
@@ -276,6 +336,12 @@ function buildScene() {
   const hyper = buildHyperspace({ scene, color, motion, small: small() });
   const cockpit = buildCockpit({ scene, token, color, box, rbox, rod, canvasTexture, small: small(), motion });
   const arcade = buildCabinet({ scene, token, color, box, canvasTexture, small: small(), motion, game });
+  const camp = buildCamp({ token, color, small: small(), motion, canvasTexture });
+  const city = buildCity({ token, color, small: small(), motion, canvasTexture });
+  const grounds = { earth: camp, mars: city };
+  let ground = camp;   // the landing site in use
+  let active = scene;   // the ship, or the landing site once down
+  let trip = null;      // the descent or lift-off in progress
 
   /* ---------- CRT monitors ---------- */
 
@@ -477,7 +543,7 @@ function buildScene() {
     if (focused >= 0 && !tween) Object.assign(view, focusPose(focused));
   };
 
-  const screenOf = (i) => (i === ARCADE ? arcade.screen : i === DECK ? cockpit.tapeAnchor : i === ABOUT ? cockpit.aboutScreen : monitors[i].screen);
+  const screenOf = (i) => (i === CAMP ? camp.crtScreen : i === CITY ? city.crtScreen : i === ARCADE ? arcade.screen : i === DECK ? cockpit.tapeAnchor : i === ABOUT ? cockpit.aboutScreen : monitors[i].screen);
   const focusPose = (i) => {
     const s = screenOf(i);
     const center = new THREE.Vector3();
@@ -519,7 +585,11 @@ function buildScene() {
     return { pos: p, target: home.target.clone() };
   };
   const seatPose = () => ({ pos: cockpit.seat.pos.clone(), target: cockpit.seat.target.clone() });
-  const restPose = () => (deck === 'cockpit' ? seatPose() : homePose());
+  const campPose = () => {
+    const p = ground.pose(camera.aspect < 1);
+    return { pos: p.pos.clone().sub(p.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).add(p.target), target: p.target };
+  };
+  const restPose = () => (deck === 'cockpit' || deck === 'descent' ? seatPose() : deck === 'ground' ? campPose() : homePose());
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const STAIR_PATH = [V(2.3, 2.5, 1.4), V(2.3, 3.6, -2.6), V(2.3, 4.45, -5.6), V(2.1, 4.4, -8.6)];
@@ -542,11 +612,19 @@ function buildScene() {
     return hit ? hit.object.userData.index : -1;
   };
   const hits = (list) => ray.intersectObjects(list, false).length > 0;
+  // A planet through the canopy: the nearest solid thing under the pointer, glass and glow ignored
+  const pickWorld = () => scene.children.filter((o) => o !== hyper.streaks);
+  const planetUnder = () => {
+    const hit = ray.intersectObjects(pickWorld(), true).find((h) => !h.object.isPoints && !h.object.isSprite && !(h.object.material && h.object.material.transparent));
+    return hit && hit.object.userData.planet ? { kind: 'planet', name: hit.object.userData.planet } : null;
+  };
 
   // What the pointer is over, by deck
   const target = (e) => {
     aim(e);
-    if (deck === 'cockpit') return hits(cockpit.aboutHits) ? { kind: 'about' } : hits(cockpit.tapeHits) ? { kind: 'tape' } : hits(cockpit.throttleHits) ? { kind: 'throttle' } : null;
+    if (trip) return null;
+    if (deck === 'ground') return hits(ground.hits.crt) ? { kind: 'crt' } : hits(ground.hits.fire) ? { kind: 'fire' } : hits(ground.hits.ship) ? { kind: 'ship' } : null;
+    if (deck === 'cockpit') return hits(cockpit.aboutHits) ? { kind: 'about' } : hits(cockpit.tapeHits) ? { kind: 'tape' } : hits(cockpit.throttleHits) ? { kind: 'throttle' } : hits(cockpit.descentHits) ? { kind: 'descent' } : hits(cockpit.scopeHits) ? { kind: 'scope' } : planetUnder();
     if (deck !== 'lounge') return null;
     const i = pick();
     if (i >= 0) return { kind: 'monitor', i };
@@ -577,11 +655,15 @@ function buildScene() {
     pointer.y = (e.clientY / window.innerHeight) * 2 - 1;
     // Pull down for more thrust, push up to ease off
     if (lever) { setThrust(lever.k + (e.clientY - lever.y) / 220); return; }
+    if (drag && e.buttons === 0) drag = null;   // the release happened somewhere we never heard about
     if (drag) {
       const dx = e.clientX - drag.x;
       const dy = e.clientY - drag.y;
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) drag.moved = true;
-      if (drag.moved && focused < 0 && deck === 'lounge') yawGoal = THREE.MathUtils.clamp(drag.yaw - dx * 0.004, -0.5, 0.5);
+      if (drag.moved && focused < 0 && (deck === 'lounge' || deck === 'ground')) {
+        const lim = deck === 'ground' ? 0.85 : 0.5;
+        yawGoal = THREE.MathUtils.clamp(drag.yaw - dx * 0.004, -lim, lim);
+      }
       if (drag.moved && focused < 0 && deck === 'cockpit') {
         head.yawGoal = drag.headYaw + dx * 0.0035;
         head.pitchGoal = THREE.MathUtils.clamp(drag.headPitch + dy * 0.004, -0.9, 0.9);
@@ -600,6 +682,9 @@ function buildScene() {
     world.setClockHot(!!t && t.kind === 'clock');
     cockpit.setHot(!!t && t.kind === 'about');
     cockpit.setTapeHot(!!t && t.kind === 'tape');
+    cockpit.setDescentHot(!!t && t.kind === 'descent');
+    cockpit.setScopeHot(!!t && t.kind === 'scope');
+    ground.setCrtHot(!!t && t.kind === 'crt');
     chButtons.forEach((b) => b.classList.toggle('is-hot', Number(b.dataset.channel) === (t && t.kind === 'arcade' ? ARCADE : hovered)));
   });
   el.addEventListener('pointerup', (e) => {
@@ -611,6 +696,12 @@ function buildScene() {
     if (t && t.kind === 'monitor') { sound('zap'); open(t.i, chButton(t.i)); }
     else if (t && t.kind === 'arcade') { sound('zap'); open(ARCADE, chButton(ARCADE)); }
     else if (t && t.kind === 'clock') { sound('zap'); world.cycleClock(); }
+    else if (t && t.kind === 'descent') { sound('zap'); cockpit.pressDescent(); open(NAV, navOpenButtons[0]); }
+    else if (t && t.kind === 'scope') { sound('zap'); open(SCOPE); }
+    else if (t && t.kind === 'planet') { sound('zap'); navPick = t.name; open(NAV, navOpenButtons[0]); }
+    else if (t && t.kind === 'crt') { sound('zap'); open(place === 'mars' ? CITY : CAMP, place === 'mars' ? bountyButtons[0] : signalButtons[0]); }
+    else if (t && t.kind === 'fire') { fx('whiff'); ground.stoke(); }
+    else if (t && t.kind === 'ship') { sound('zap'); liftOff(); }
     else if (t && t.kind === 'about') { sound('zap'); open(ABOUT, pilotButtons[0]); }
     else if (t && t.kind === 'tape') { sound('zap'); open(DECK, tapeButtons[0]); }
     else if (t && t.kind === 'door') goCockpit();
@@ -625,6 +716,9 @@ function buildScene() {
     chButtons.forEach((b) => b.classList.remove('is-hot'));
     arcade.setHot(false);
     world.setClockHot(false);
+    cockpit.setDescentHot(false);
+    cockpit.setScopeHot(false);
+    ground.setCrtHot(false);
   });
 
   /* ---------- Loop ---------- */
@@ -633,13 +727,73 @@ function buildScene() {
   Object.assign(view, homePose());
   // Compile every shader up front (off the main thread where supported), so
   // walking into the cockpit never stalls on first-time shader builds
-  if (renderer.compileAsync) renderer.compileAsync(scene, camera).catch(() => {});
-  else renderer.compile(scene, camera);
+  if (renderer.compileAsync) { renderer.compileAsync(scene, camera).catch(() => {}); renderer.compileAsync(camp.scene, camera).catch(() => {}); renderer.compileAsync(city.scene, camera).catch(() => {}); }
+  else { renderer.compile(scene, camera); renderer.compile(camp.scene, camera); renderer.compile(city.scene, camera); }
   let lastScreens = 0;
   let lastT = 0;
   let nextBeep = 3000;
   const lensPos = new THREE.Vector3();
   tape.onChange((on) => cockpit.setPlaying(on));
+
+  /* ---------- The trip down to Earth and back ---------- */
+
+  const smooth = THREE.MathUtils.smoothstep;
+  const say = (text) => { if (descentStatus.textContent !== text) descentStatus.textContent = text; };
+  const resetSeat = () => { head.yaw = head.pitch = head.yawGoal = head.pitchGoal = 0; };
+  // Runs each frame while travelling; returns how hard the cabin shakes
+  const runTrip = (t) => {
+    const p = THREE.MathUtils.clamp((t - trip.t0) / trip.dur, 0, 1);
+    if (trip.kind === 'down') {
+      // Drop out of hyperspace, Earth swells into the canopy, the nose lights up, cloud whiteout
+      hyper.setDescent(Math.min(1, p / 0.85));
+      const heat = smooth(p, 0.42, 0.58) * (1 - smooth(p, 0.9, 0.97));
+      cockpit.setPlasma(heat);
+      head.pitchGoal = -0.14 * smooth(p, 0.3, 0.6);   // eyes up: the canopy fills with planet, then fire
+      reentryHeat.style.opacity = String(heat * 0.3);
+      reentryWhite.style.opacity = String(smooth(p, 0.86, 1));
+      const mars = trip.dest === 'mars';
+      say(p < 0.3 ? 'DROPPING OUT OF HYPERSPACE' : p < 0.45 ? (mars ? 'MARS APPROACH / ALT 400 KM' : 'EARTH APPROACH / ALT 400 KM') : p < 0.86 ? (mars ? 'MARTIAN ENTRY / HULL 1400 C' : 'ATMOSPHERIC ENTRY / HULL 1600 C') : (mars ? 'THROUGH THE DUST' : 'THROUGH THE CLOUDS'));
+      if (p >= 1) {
+        // Cut to the campsite under the whiteout, and bring her down onto the clearing
+        active = ground.scene;
+        deck = 'ground';
+        yaw = yawGoal = 0;
+        resetSeat();
+        cockpit.setPlasma(0);
+        reentryHeat.style.opacity = '0';
+        ground.land(motion() ? 4200 : 10);
+        fx('thrust');
+        trip = { kind: 'arrive', t0: t, dur: motion() ? 1600 : 300, done: trip.done, dest: trip.dest };
+        say(trip.dest === 'mars' ? 'TOUCHDOWN / TIJUANA, MARS' : 'TOUCHDOWN / EARTHSIDE');
+      }
+      return heat * 0.05 + smooth(p, 0.18, 0.28) * (1 - smooth(p, 0.28, 0.4)) * 0.02;
+    }
+    if (trip.kind === 'arrive') {
+      reentryWhite.style.opacity = String(1 - p);
+      if (p >= 1) { const done = trip.done; trip = null; setTimeout(() => say(''), 2400); if (done) done(); }
+      return 0;
+    }
+    if (trip.kind === 'up') {
+      // The ship climbs out of the trees, then everything goes white and we're back aboard
+      reentryWhite.style.opacity = String(smooth(p, 0.55, 1));
+      say('LIFT OFF');
+      if (p >= 1) {
+        active = scene;
+        deck = 'descent';
+        hyper.setDescent(0);
+        ground.resetLanded();
+        resetSeat();
+        Object.assign(view, seatPose());
+        trip = { kind: 'return', t0: t, dur: motion() ? 1400 : 300, done: trip.done };
+        say('BACK IN HYPERSPACE');
+      }
+      return 0;
+    }
+    // Returning: the whiteout clears onto the canopy and the streaks
+    reentryWhite.style.opacity = String(1 - p);
+    if (p >= 1) { const done = trip.done; trip = null; deck = 'cockpit'; setTimeout(() => say(''), 1800); if (done) done(); }
+    return 0;
+  };
 
   const frame = (t) => {
     requestAnimationFrame(frame);   // schedule first, so one bad frame can never stop the loop
@@ -648,10 +802,14 @@ function buildScene() {
   const step = (t) => {
     const dt = THREE.MathUtils.clamp((t - lastT) / 1000, 0, 0.1);
     lastT = t;
-    world.update(t, dt);
-    arcade.update(t);
-    hyper.update(t, dt);
-    cockpit.update(t, dt);
+    if (active === ground.scene) ground.update(t, dt);
+    else {
+      world.update(t, dt);
+      arcade.update(t);
+      hyper.update(t, dt);
+      cockpit.update(t, dt);
+    }
+    const shake = trip ? runTrip(t) : 0;
 
     // Camera
     if (tween && tween.path) {
@@ -667,7 +825,7 @@ function buildScene() {
       view.target.lerpVectors(tween.from.target, tween.to.target, k);
       if (p >= 1) { const done = tween.done; tween = null; if (done) done(); }
     } else if (focused < 0) {
-      if (deck === 'lounge') yaw += (yawGoal - yaw) * 0.08;
+      if (deck === 'lounge' || deck === 'ground') yaw += (yawGoal - yaw) * 0.08;
       const rp = restPose();
       view.pos.copy(rp.pos);
       view.target.copy(rp.target);
@@ -677,13 +835,17 @@ function buildScene() {
     if (motion() && !tween) {
       if (deck === 'cockpit' && focused < 0) {
         camera.position.y += Math.sin(t * 0.0016) * 0.008;   // the hum of the hull
-      } else if (deck === 'lounge') {
+      } else if (deck === 'lounge' || deck === 'ground') {
         // A slow drift and a little pointer parallax keep the room alive
         camera.position.x += Math.sin(t * 0.00023) * 0.08 + pointer.x * (focused < 0 ? 0.35 : 0.05);
         camera.position.y += Math.sin(t * 0.00031) * 0.05 - pointer.y * (focused < 0 ? 0.2 : 0.03);
       }
     }
-    if (deck === 'cockpit' && focused < 0 && !tween) {
+    if (shake && motion()) {
+      camera.position.x += (Math.random() - 0.5) * shake;
+      camera.position.y += (Math.random() - 0.5) * shake;
+    }
+    if ((deck === 'cockpit' || deck === 'descent') && focused < 0 && !tween) {
       // Seated: turn the head around the forward line, by drag plus a little pointer sway
       head.yaw += (head.yawGoal - head.yaw) * 0.12;
       head.pitch += (head.pitchGoal - head.pitch) * 0.12;
@@ -710,10 +872,13 @@ function buildScene() {
       m.glow.intensity = (2.2 + m.hover * 2.5) * (motion() ? 0.9 + 0.1 * Math.sin(t * 0.02 + m.seed) : 1);
     });
     if (t - lastScreens > (motion() ? 66 : 1000)) {
-      monitors.forEach((m, i) => drawScreen(m, i, t));
-      world.redraw(t);
-      arcade.redraw(t);
-      cockpit.redraw(t);
+      if (active === ground.scene) ground.redraw(t);
+      else {
+        monitors.forEach((m, i) => drawScreen(m, i, t));
+        world.redraw(t);
+        arcade.redraw(t);
+        cockpit.redraw(t);
+      }
       lastScreens = t;
     }
 
@@ -732,7 +897,7 @@ function buildScene() {
       tape.beam(lx, ly, tx, Math.min(ty, ly));
     }
 
-    renderer.render(scene, camera);
+    renderer.render(active, camera);
   };
   requestAnimationFrame(frame);
 
@@ -742,6 +907,23 @@ function buildScene() {
 
   return {
     setThrust(k) { hyper.setThrust(k); cockpit.setThrust(k); },
+    setCourse(name) { hyper.setCourse(name); },
+    descend(dest, done) {
+      focused = -1;
+      deck = 'descent';
+      ground = grounds[dest];
+      hyper.setCourse(dest);
+      reentryWhite.style.background = dest === 'mars' ? 'var(--mars-dust)' : '';   // dust, not cloud
+      resetSeat();
+      fx('reentry');
+      trip = { kind: 'down', t0: performance.now(), dur: motion() ? 11000 : 1500, done, dest };
+    },
+    liftOff(done) {
+      focused = -1;
+      ground.liftOff(motion() ? 2600 : 10);
+      fx('thrust');
+      trip = { kind: 'up', t0: performance.now(), dur: motion() ? 3000 : 400, done };
+    },
     focus(i, done) {
       focused = i;
       head.yaw = head.pitch = head.yawGoal = head.pitchGoal = 0;   // the fly-in starts from the turned view

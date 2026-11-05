@@ -123,12 +123,61 @@ export function buildHyperspace({ scene, color, motion, small }) {
   planet.position.set(CX - 120, -175, -760);
   planet.rotation.z = 0.35;   // axial tilt
   scene.add(planet);
+  // Two slots: NEAR (low-left, filling the lower canopy) and FAR_SLOT (a small disc high
+  // to the right). Setting a course swaps which planet holds which. The descent then
+  // brings the near one up: first filling the canopy, then rising round the ship.
+  const NEAR = planet.position.clone();
+  const FAR_SLOT = new THREE.Vector3(CX + 210, 150, -950);
+  const P1 = new THREE.Vector3(CX, -R - 5, -300);
+  const P2 = new THREE.Vector3(CX, -R + 2, -140);
+  let descent = 0, course = 0, courseGoal = 0;   // course 0: Earth near; 1: Mars near
   const earth = new THREE.Mesh(new THREE.SphereGeometry(R, 96, 64), new THREE.MeshStandardMaterial({ map: groundTex, roughness: 0.8, metalness: 0, fog: false, envMapIntensity: 0.15 }));
   planet.add(earth);
   const clouds = new THREE.Mesh(new THREE.SphereGeometry(R * 1.006, 96, 64), new THREE.MeshStandardMaterial({ map: cloudTex, transparent: true, depthWrite: false, fog: false, roughness: 1, envMapIntensity: 0.1 }));
   planet.add(clouds);
   const atmo = new THREE.Mesh(new THREE.SphereGeometry(R * 1.035, 64, 48), new THREE.MeshBasicMaterial({ color: color('--atmo'), transparent: true, opacity: 0.22, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   planet.add(atmo);
+
+  // Mars: rust plains, dark basalt, craters and white polar caps
+  const rust = noise(41, [[6, 3], [12, 6], [24, 12], [48, 24], [96, 48]]);
+  const M = ['--mars-dark', '--mars-rust', '--mars-dust', '--cream'].map((n) => color(n));
+  const marsTex = paint(tw, tw / 2, (d, k, u, v) => {
+    const hh = rust(u, v);
+    let c = mixC(mixC(M[0], M[1], (hh - 0.35) / 0.15), M[2], (hh - 0.55) / 0.15);
+    const crater = Math.sin(u * 140) * Math.sin(v * 90) > 0.97 ? 0.25 : 0;
+    c = mixC(c, M[0], crater);
+    c = mixC(c, M[3], Math.max(0, (Math.abs(v * 2 - 1) - 0.88) / 0.07));
+    d[k] = c.r * 255; d[k + 1] = c.g * 255; d[k + 2] = c.b * 255; d[k + 3] = 255;
+  });
+  const marsGroup = new THREE.Group();
+  marsGroup.rotation.z = -0.25;
+  scene.add(marsGroup);
+  const mars = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 48), new THREE.MeshStandardMaterial({ map: marsTex, roughness: 0.9, metalness: 0, fog: false, envMapIntensity: 0.15 }));
+  marsGroup.add(mars);
+  marsGroup.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.03, 48, 32), new THREE.MeshBasicMaterial({ color: color('--amber'), transparent: true, opacity: 0.16, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+  earth.userData.planet = 'earth';
+  mars.userData.planet = 'mars';
+
+  // Put each planet in its slot for the current course, and bring the destination in for the descent
+  const tmp = new THREE.Vector3();
+  // Swapping slots, the two planets wheel round their midpoint on opposite sides
+  // instead of sliding through each other
+  const swing = new THREE.Vector3().subVectors(NEAR, FAR_SLOT).cross(new THREE.Vector3(0, 1, 0)).normalize()
+    .multiplyScalar(NEAR.distanceTo(FAR_SLOT) * 0.5);
+  const placePlanets = () => {
+    const dest = courseGoal;
+    [[planet, 1 - course, dest === 0, 1], [marsGroup, course, dest === 1, -1]].forEach(([g, w, isDest, side]) => {
+      tmp.lerpVectors(FAR_SLOT, NEAR, w).addScaledVector(swing, side * Math.sin(Math.PI * w));
+      let sc = 0.22 + 0.78 * w;
+      if (isDest && descent > 0) {
+        tmp.lerp(P1, THREE.MathUtils.smoothstep(descent, 0.15, 0.75));
+        tmp.lerp(P2, THREE.MathUtils.smoothstep(descent, 0.75, 1));
+      }
+      g.position.copy(tmp);
+      g.scale.setScalar(sc);
+    });
+  };
+  placePlanets();
 
   // Speed follows the cockpit throttle: 0 idles, 1 is full burn. Streaks stretch as we speed up
   let thrust = THRUST_DEFAULT, speed = 1;
@@ -150,10 +199,33 @@ export function buildHyperspace({ scene, color, motion, small }) {
 
   return {
     setThrust(k) { thrust = k; },
+    planetHits: [earth, mars],
+    streaks,
+    // 'earth' or 'mars': the ship swings round so that planet comes in close
+    setCourse(name) {
+      courseGoal = name === 'mars' ? 1 : 0;
+      if (!motion()) { course = courseGoal; placePlanets(); }
+    },
+    // 0 is cruising in hyperspace; through the first third the streaks wind down and
+    // fade, then the destination comes up to meet the ship
+    setDescent(k) {
+      descent = k;
+      if (k > 0) course = courseGoal;   // any course change is over by the time we drop
+      const drop = Math.min(1, k * 3);
+      material.opacity = 0.9 * (1 - drop);
+      core.material.opacity = 1 - drop;
+      streaks.visible = core.visible = drop < 1;
+      placePlanets();
+    },
     update(t, dt) {
+      if (course !== courseGoal) {
+        course += (courseGoal - course) * Math.min(1, dt * 1.4);
+        if (Math.abs(courseGoal - course) < 0.002) course = courseGoal;
+        placePlanets();
+      }
       if (!motion()) return;
       speed += (speedFor(thrust) - speed) * Math.min(1, dt * 1.8);   // the drive spools up and down, not instantly
-      const v = 150 * dt * speed;
+      const v = 150 * dt * speed * (1 - Math.min(1, descent * 3));
       for (const l of lines) {
         l.z += v * (0.8 + l.w * 2);
         if (l.z > l.end) place(l, false);
@@ -163,8 +235,10 @@ export function buildHyperspace({ scene, color, motion, small }) {
       core.scale.set(s, s, 1);
       // The surface rolls toward us as we fly over it; clouds drift a little faster
       // The planet turns; clouds drift a little faster than the ground
-      earth.rotation.y += dt * 0.012;
-      clouds.rotation.y += dt * 0.016;
+      const down = courseGoal ? 0 : descent;
+      earth.rotation.y += dt * (0.012 + down * 0.06);   // the ground rolls faster as we come down on it
+      clouds.rotation.y += dt * (0.016 + down * 0.08);
+      mars.rotation.y += dt * (0.01 + (courseGoal ? descent * 0.06 : 0));
     },
   };
 }
@@ -496,6 +570,65 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
   const leverAngle = (k) => -0.65 + 1.3 * k;
   lever.rotation.x = leverAngle(thrust);
 
+  /* ---------- Descent button: a guarded red dome behind the throttle ---------- */
+
+  const descentBtn = new THREE.Group();
+  descentBtn.position.set(0.47, 0.03, -0.3);
+  slope.add(descentBtn);
+  const plateTex = canvasTexture(128, 128, (g, w, h) => {
+    g.fillStyle = token('--space-black'); g.fillRect(0, 0, w, h);
+    g.fillStyle = token('--amber');
+    for (let x = -h; x < w + h; x += 24) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + 12, h); g.lineTo(x + 12 + h, 0); g.lineTo(x + h, 0); g.fill(); }
+    g.fillStyle = token('--space-black'); g.fillRect(14, 14, w - 28, h - 28);
+    g.fillStyle = token('--cream'); g.font = '18px VT323, monospace'; g.textAlign = 'center';
+    g.fillText('DESCENT', w / 2, h - 22);
+  });
+  box(0.26, 0.02, 0.26, new THREE.MeshStandardMaterial({ map: plateTex, roughness: 0.6 }), 0, 0.01, 0, descentBtn);
+  const domeM = new THREE.MeshBasicMaterial({ color: color('--bebop-red'), toneMapped: false });
+  const domeBase = color('--bebop-red');
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.065, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), domeM);
+  dome.position.set(0, 0.02, 0.015);
+  descentBtn.add(dome);
+  // The clear safety cover, flipped up on its hinge
+  const hinge = new THREE.Group();
+  hinge.position.set(0, 0.03, -0.09);
+  hinge.rotation.x = -1.9;
+  descentBtn.add(hinge);
+  const cover = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.08, 0.18), new THREE.MeshStandardMaterial({ color: color('--fan-light'), transparent: true, opacity: 0.3, roughness: 0.05, depthWrite: false }));
+  cover.position.set(0, 0.04, 0.09);
+  hinge.add(cover);
+  const descentPad = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.32), new THREE.MeshBasicMaterial({ visible: false }));
+  descentPad.position.y = 0.09;
+  descentBtn.add(descentPad);
+  let descentHot = false, pressed = 0;
+
+  /* ---------- Re-entry: plasma streaming back off the nose ---------- */
+
+  const plasma = new THREE.Group();
+  plasma.visible = false;
+  scene.add(plasma);
+  const PC = V(CX, FY + 0.9, z1 - 2.8);
+  const sheath = [];
+  for (let k = 0; k < 28; k++) {
+    const a = (k / 28) * Math.PI * 2;
+    const ink = ['--bebop-red', '--amber', '--cream'][k % 3];
+    const m = new THREE.MeshBasicMaterial({ color: color(ink), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide, fog: false });
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.09 + (k % 4) * 0.04, 5.5 + (k % 3) * 1.5, 6, 1, true), m);
+    cone.rotation.x = Math.PI / 2;   // tips stream back toward the cabin
+    cone.position.set(PC.x + Math.cos(a) * (1.6 + (k % 3) * 0.35), PC.y + Math.sin(a) * (1.1 + (k % 2) * 0.3), PC.z - 1.2 - (k % 4) * 0.3);
+    plasma.add(cone);
+    sheath.push({ cone, m, seed: k * 1.7 });
+  }
+  // The glowing bow shock right at the point of the nose
+  const bowM = new THREE.MeshBasicMaterial({ color: color('--amber'), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false });
+  const bow = new THREE.Mesh(new THREE.SphereGeometry(1.1, 18, 12), bowM);
+  bow.position.set(CX, FY + 0.1, z1 - 5.2);
+  bow.scale.set(1.4, 1, 0.6);
+  plasma.add(bow);
+  const plasmaLight = small ? null : new THREE.PointLight(color('--amber'), 0, 10, 1.8);
+  if (plasmaLight) { plasmaLight.position.set(CX, FY + 1.6, z1 + 0.5); scene.add(plasmaLight); }
+  let heat = 0;
+
   /* ---------- Cassette deck (plays the playlist) and loose headphones ---------- */
 
   const shellM = mat('--crt-shell', 0.5, 0.35);
@@ -611,7 +744,6 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
       buttons.push({ m, base: color(name), period: 300 + Math.random() * 1800, phase: Math.random() * 3000, steady: Math.random() < 0.35 });
     }
   };
-  addButtons(slope, 3, 2, 0.36, -0.39, 0.11);   // behind the throttle
   addButtons(slope, 4, 4, 1.2, -0.33, 0.11);
   slopes.forEach((top) => addButtons(top, 6, 4, -0.33, -0.22, 0.12));
   // Throttle and flight stick
@@ -629,6 +761,42 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
     dashGlow.position.set(CX, FY + 1.5, -14.6);
     scene.add(dashGlow);
   }
+
+  /* ---------- Telescope in the aisle behind the seats (turn round to see it) ---------- */
+
+  const scope = new THREE.Group();
+  scope.position.set(CX + 1.3, FY, -11.2);
+  scope.rotation.y = 0.6;
+  scene.add(scope);
+  [0, 2.1, 4.2].forEach((a) => rod(V(Math.cos(a) * 0.45, 0, Math.sin(a) * 0.45), V(0, 1.1, 0), 0.025, darkM, scope));   // tripod
+  box(0.16, 0.14, 0.16, darkM, 0, 1.14, 0, scope);
+  const tube = new THREE.Group();
+  tube.position.set(0, 1.24, 0);
+  tube.rotation.set(0.85, 0, 0);   // tilted up toward the sky through the canopy behind you
+  scope.add(tube);
+  const tubeM = mat('--cream', 0.4, 0.3);
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 1.2, 18), tubeM);
+  barrel.position.y = 0.2;
+  barrel.castShadow = true;
+  tube.add(barrel);
+  [-0.25, 0.45].forEach((y) => {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.135, 0.06, 18), mat('--amber', 0.3, 0.8));
+    band.position.y = y;
+    tube.add(band);
+  });
+  const eyepiece = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.18, 10), darkM);
+  eyepiece.position.y = -0.48;
+  tube.add(eyepiece);
+  const lensM = new THREE.MeshBasicMaterial({ color: color('--neon-cyan'), toneMapped: false });
+  const objective = new THREE.Mesh(new THREE.CircleGeometry(0.1, 18), lensM);
+  objective.rotation.x = -Math.PI / 2;
+  objective.position.y = 0.805;
+  tube.add(objective);
+  const scopePad = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.9), new THREE.MeshBasicMaterial({ visible: false }));
+  scopePad.position.y = 1.1;
+  scope.add(scopePad);
+  let scopeHot = false;
+  const lensBase = color('--neon-cyan');
 
   /* ---------- Screen pictures ---------- */
 
@@ -748,6 +916,12 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
     seat: { pos: V(1.45, FY + 1.55, -13.3), target: V(2.15, FY + 1.05, -20) },   // eyes just in front of the headrest
     setHot(v) { hot = v; },
     throttleHits: [throttlePad],
+    descentHits: [descentPad],
+    scopeHits: [scopePad],
+    setScopeHot(v) { scopeHot = v; },
+    setDescentHot(v) { descentHot = v; },
+    pressDescent() { pressed = 1; },
+    setPlasma(k) { heat = k; plasma.visible = k > 0.001; if (plasmaLight) plasmaLight.intensity = k * 16; },
     setThrust(k) { thrust = k; },
     setTapeHot(v) { tapeHot = v; },
     setPlaying(v) { playing = v; },
@@ -759,6 +933,19 @@ export function buildCockpit({ scene, token, color, box, rbox, rod, canvasTextur
       });
       drawPort(dt);
       thrustShown += (thrust - thrustShown) * Math.min(1, dt * 1.8);   // matches the drive spooling
+      lensM.color.copy(lensBase).multiplyScalar(scopeHot ? 1.3 : motion() ? 0.5 + 0.3 * Math.sin(t * 0.003) : 0.7);
+      // The descent dome breathes, brighter under the pointer, and sinks when pressed
+      pressed = Math.max(0, pressed - dt * 2);
+      dome.position.y = 0.02 - pressed * 0.025;
+      domeM.color.copy(domeBase).multiplyScalar(descentHot || pressed ? 1.4 : motion() ? 0.7 + 0.3 * Math.sin(t * 0.004) : 1);
+      if (heat > 0) {
+        sheath.forEach(({ cone, m, seed: s }) => {
+          const n = motion() ? 0.7 + 0.3 * Math.sin(t * 0.03 + s) + 0.25 * Math.random() : 1;
+          cone.scale.set(1, (0.6 + heat) * n, 1);
+          m.opacity = heat * 0.55 * n;
+        });
+        bowM.opacity = heat * (0.5 + (motion() ? 0.2 * Math.random() : 0));
+      }
       lever.rotation.x += (leverAngle(thrust) - lever.rotation.x) * Math.min(1, dt * 14);
       // The deck: reels turn and the meter jumps while the playlist runs
       const run = playing && motion();

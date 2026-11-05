@@ -81,6 +81,8 @@
   <main id="main" class="lounge">
     <!-- The 3D lounge (decorative; the channel buttons below are the real controls) -->
     <div class="lounge__stage" data-stage aria-hidden="true"></div>
+    <!-- Re-entry: an orange heat wash, then the whiteout through the clouds -->
+    <div class="reentry" data-reentry aria-hidden="true"><div class="reentry__heat" data-reentry-heat></div><div class="reentry__white" data-reentry-white></div></div>
 
     <header class="lounge__intro lounge__intro--lounge">
       <h1 class="lounge__title">Off duty</h1>
@@ -88,8 +90,17 @@
     </header>
     <div class="lounge__intro lounge__intro--cockpit">
       <p class="lounge__title" aria-hidden="true">The bridge</p>
-      <p class="lounge__lede">Pilot's seat, hyperdrive engaged, Earth below. Drag to look around. Pull the throttle down to speed up. The monitor has the pilot file; the tape deck plays my playlist.</p>
+      <p class="lounge__lede">Pilot's seat, hyperdrive engaged, Earth below. Drag to look around; there's a telescope behind you. Pull the throttle down to speed up. The monitor has the pilot file; the tape deck plays my playlist. The red button plots a course: Earth or Mars.</p>
     </div>
+    <div class="lounge__intro lounge__intro--ground" data-place-only="earth">
+      <p class="lounge__title" aria-hidden="true">Earthside</p>
+      <p class="lounge__lede">Docked in the pines, fire going. The CRT on the crate carries a signal home. Click the fire to stoke it; board the ship to lift off.</p>
+    </div>
+    <div class="lounge__intro lounge__intro--ground" data-place-only="mars">
+      <p class="lounge__title" aria-hidden="true">Tijuana</p>
+      <p class="lounge__lede">Mars, downtown, the sun going down in the dust. The street terminal by the crossing has the bounty board. Board the ship to lift off.</p>
+    </div>
+    <p class="descent-status" data-descent-status role="status" aria-live="polite"></p>
 
     <nav class="channels-bar" id="channels" aria-label="Hobby channels">
       <ul>
@@ -107,7 +118,16 @@
         <li><button class="ch" type="button" data-pilot aria-controls="about-pilot"><span class="ch__no">Pilot file</span>About me</button></li>
         <li><button class="ch" type="button" data-tape aria-controls="holo"><span class="ch__no">Tape deck</span>Music</button></li>
         <li><label class="thrust"><span class="thrust__label">Throttle <output data-thrust-num>30%</output></span><input class="snd__range thrust__range" type="range" min="0" max="100" step="1" value="30" data-thrust aria-label="Thrust"></label></li>
+        <li><button class="ch ch--descend" type="button" data-nav-open aria-controls="nav-plot"><span class="ch__no">Red button</span>Plot a course</button></li>
         <li><button class="ch ch--deck" type="button" data-deck="lounge"><span class="ch__no">Down the stairs</span>Lounge</button></li>
+      </ul>
+    </nav>
+
+    <nav class="channels-bar ground-bar" aria-label="Landing site controls">
+      <ul>
+        <li data-place-only="earth"><button class="ch" type="button" data-signal aria-controls="camp-signal"><span class="ch__no">Campfire CRT</span>Signal home</button></li>
+        <li data-place-only="mars"><button class="ch" type="button" data-bounty aria-controls="city-bounty"><span class="ch__no">Street terminal</span>Bounty board</button></li>
+        <li><button class="ch ch--deck" type="button" data-liftoff><span class="ch__no">Board ship</span>Lift off</button></li>
       </ul>
     </nav>
 
@@ -170,6 +190,35 @@
         </dl>
       </article>
 
+      <article class="hobby" id="camp-signal" data-hobby="7" tabindex="-1" aria-labelledby="camp-signal-title" hidden>
+        <p class="hobby__ch">Earthside / Campfire CRT</p>
+        <h2 class="hobby__title" id="camp-signal-title">Signal home</h2>
+        <p class="hobby__lede">You came all the way down. Pull up a log.</p>
+        <p>If you're hiring for data or software engineering, want to build something together, or just want to talk music, fighting games or books, the channel's open. I read everything that comes in.</p>
+        <p class="hobby__links">
+          <a href="mailto:avighat32@gmail.com">Email</a>
+          <a href="https://www.linkedin.com/in/aviraj-ghatora/" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/AviGhat" target="_blank" rel="noopener">GitHub</a>
+          <a href="assets/Aviraj_Ghatora_Resume.pdf" target="_blank" rel="noopener">Resume</a>
+        </p>
+      </article>
+
+      <article class="hobby" id="city-bounty" data-hobby="9" tabindex="-1" aria-labelledby="city-bounty-title" hidden>
+        <p class="hobby__ch">Tijuana / Street terminal</p>
+        <h2 class="hobby__title" id="city-bounty-title">Bounty board</h2>
+        <p class="hobby__lede">Three files pinned to the board. Each one's a thing I built.</p>
+        <dl class="hobby__log">
+          <div><dt>File 01</dt><dd>Discover Me</dd></div>
+          <div><dt>File 02</dt><dd>Capacity Pipeline</dd></div>
+          <div><dt>File 03</dt><dd>Appraisal Reader</dd></div>
+        </dl>
+        <p class="hobby__links">
+          <a href="portfolio.html#bounties">Read the files</a>
+          <a href="https://deerhacks2025.vercel.app/" target="_blank" rel="noopener">Discover Me, live</a>
+          <a href="https://github.com/AviGhat" target="_blank" rel="noopener">GitHub</a>
+        </p>
+      </article>
+
       <article class="hobby" id="about-pilot" data-hobby="4" tabindex="-1" aria-labelledby="about-pilot-title" hidden>
         <p class="hobby__ch">Bridge / Pilot file</p>
         <h2 class="hobby__title" id="about-pilot-title">Aviraj Ghatora</h2>
@@ -223,6 +272,51 @@
         <div><dt>Dash / combo</dt><dd>Tap forward or back twice. A punch or kick that lands can cancel into a special.</dd></div>
         <div><dt>Start</dt><dd><kbd>Enter</kbd></dd></div>
       </dl>
+    </section>
+
+    <!-- The nav plot: choose a planet, see the distance, begin the descent -->
+    <section class="navi" id="nav-plot" data-nav tabindex="-1" aria-labelledby="nav-title" hidden>
+      <div class="navi__head">
+        <p class="navi__signal"><span class="lamp" aria-hidden="true"></span>Nav / Plot a course</p>
+        <button class="tv__btn" type="button" data-nav-close>Close <kbd>Esc</kbd></button>
+      </div>
+      <div class="navi__body">
+        <canvas class="navi__radar" data-nav-radar width="240" height="240" aria-hidden="true"></canvas>
+        <div class="navi__list">
+          <h2 class="navi__title" id="nav-title">Destination</h2>
+          <div role="radiogroup" aria-labelledby="nav-title">
+            <button class="navi__dest" type="button" role="radio" aria-checked="true" data-dest="earth">
+              <span class="navi__name">Earth</span><span class="navi__where">Pine camp / night</span><span class="navi__dist" data-dist="earth"></span>
+            </button>
+            <button class="navi__dest" type="button" role="radio" aria-checked="false" data-dest="mars">
+              <span class="navi__name">Mars</span><span class="navi__where">Tijuana / dusk</span><span class="navi__dist" data-dist="mars"></span>
+            </button>
+          </div>
+          <button class="navi__go" type="button" data-nav-go>Begin descent <span data-nav-go-to>to Earth</span></button>
+          <button class="navi__scope" type="button" data-scope-open aria-controls="scope-view">Telescope: survey the other six</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- The telescope at the back of the cockpit: the planets you can't land on -->
+    <section class="scope" id="scope-view" data-scope tabindex="-1" aria-labelledby="scope-title" hidden>
+      <div class="navi__head">
+        <p class="navi__signal"><span class="lamp" aria-hidden="true"></span>Telescope / Survey</p>
+        <button class="tv__btn" type="button" data-scope-close>Close <kbd>Esc</kbd></button>
+      </div>
+      <div class="scope__body">
+        <canvas class="scope__view" data-scope-view width="300" height="300" aria-hidden="true"></canvas>
+        <div class="scope__info">
+          <h2 class="scope__name" id="scope-title" data-scope-name aria-live="polite">Jupiter</h2>
+          <p class="scope__dist" data-scope-dist></p>
+          <p class="scope__note" data-scope-note></p>
+          <div class="scope__step">
+            <button class="tv__btn" type="button" data-scope-prev aria-label="Previous planet">&lt; Prev</button>
+            <button class="tv__btn" type="button" data-scope-next aria-label="Next planet">Next &gt;</button>
+          </div>
+          <ul class="scope__list" data-scope-list aria-label="Planets"></ul>
+        </div>
+      </div>
     </section>
 
     <!-- The tape deck's holographic player: our controls, Spotify's embed underneath -->
